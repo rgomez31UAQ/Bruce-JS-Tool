@@ -31,7 +31,7 @@ export default class DMA {
   }
 
   tick() {
-    if (this.cycle < 512) { // this.isBlockingCPU()
+    if (this.cycle < 512) {
       this.cycle++;
       if (this.cycle & 1) {
         this.transferData(); // Each even cycle

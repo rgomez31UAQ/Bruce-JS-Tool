@@ -376,7 +376,7 @@ var require_CPUMemory = __commonJS({
           if (address >= 32768) {
             return this.readPRGROM(address);
           } else if (address < 8192) {
-            return this.readRAM(address);
+            return this.ram[address & 2047];
           } else if (address < 16416) {
             return this.readRegister(address);
           } else if (address >= 24576) {
@@ -388,7 +388,7 @@ var require_CPUMemory = __commonJS({
           if (address >= 32768) {
             this.writePRGROM(address, value);
           } else if (address < 8192) {
-            this.writeRAM(address, value);
+            this.ram[address & 2047] = value;
           } else if (address < 16416) {
             this.writeRegister(address, value);
           } else if (address >= 24576) {
@@ -2504,8 +2504,6 @@ var require_PPU = __commonJS({
           }
           if (this.scanline <= 239) {
             this.clearSprites();
-            this.spriteCache.fill(null);
-            this.spritePixelCache.fill(0);
             if (this.scanline > 0) {
               this.preRenderSprites();
             }
@@ -2521,9 +2519,6 @@ var require_PPU = __commonJS({
             this.fetchData();
             this.doRendering();
             this.updateScrolling();
-          } else {
-            this.skipRendering();
-            this.addressBus = this.vramAddress;
           }
           this.updateVBlank();
           this.incrementCycle();
@@ -2845,6 +2840,7 @@ var require_CPU = __commonJS({
   "dist/cfxnes-core/proc/CPU.js": function(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.operations = void 0;
     var common_1 = require_common();
     var interrupts_1 = require_interrupts();
     var F_EXTRA_CYCLE = 1 << 0;
@@ -2852,7 +2848,7 @@ var require_CPU = __commonJS({
     var RESET_ADDRESS = 65532;
     var NMI_ADDRESS = 65530;
     var IRQ_ADDRESS = 65534;
-    var operations = new Array(255);
+    exports2.operations = new Array(255);
     var CPU = (
       /** @class */
       function() {
@@ -2972,11 +2968,11 @@ var require_CPU = __commonJS({
         };
         CPU2.prototype.readAndExecuteOperation = function() {
           var nextProgramByte = this.readNextProgramByte();
-          if (operations[nextProgramByte]) {
+          if (exports2.operations[nextProgramByte]) {
             this.irqDisabled = this.interruptFlag;
-            this.operationFlags = operations[nextProgramByte][2];
-            var effectiveAddress = operations[nextProgramByte][1].call(this);
-            operations[nextProgramByte][0].call(this, effectiveAddress);
+            this.operationFlags = exports2.operations[nextProgramByte][2];
+            var effectiveAddress = exports2.operations[nextProgramByte][1].call(this);
+            exports2.operations[nextProgramByte][0].call(this, effectiveAddress);
           } else {
             common_1.log.warn("CPU halted!");
             this.halted = true;
@@ -3456,250 +3452,250 @@ var require_CPU = __commonJS({
       return (address1 & 65280) !== (address2 & 65280);
     }
     var proto = CPU.prototype;
-    operations[26] = [proto.NOP, proto.impliedMode, 0];
-    operations[58] = [proto.NOP, proto.impliedMode, 0];
-    operations[90] = [proto.NOP, proto.impliedMode, 0];
-    operations[122] = [proto.NOP, proto.impliedMode, 0];
-    operations[218] = [proto.NOP, proto.impliedMode, 0];
-    operations[234] = [proto.NOP, proto.impliedMode, 0];
-    operations[250] = [proto.NOP, proto.impliedMode, 0];
-    operations[128] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    operations[130] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    operations[137] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    operations[194] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    operations[226] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    operations[4] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
-    operations[68] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
-    operations[100] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
-    operations[20] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    operations[52] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    operations[84] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    operations[116] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    operations[212] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    operations[244] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    operations[12] = [proto.NOP, proto.absoluteMode, F_EXTRA_CYCLE];
-    operations[28] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    operations[60] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    operations[92] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    operations[124] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    operations[220] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    operations[252] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    operations[24] = [proto.CLC, proto.impliedMode, 0];
-    operations[88] = [proto.CLI, proto.impliedMode, 0];
-    operations[216] = [proto.CLD, proto.impliedMode, 0];
-    operations[184] = [proto.CLV, proto.impliedMode, 0];
-    operations[56] = [proto.SEC, proto.impliedMode, 0];
-    operations[120] = [proto.SEI, proto.impliedMode, 0];
-    operations[248] = [proto.SED, proto.impliedMode, 0];
-    operations[133] = [proto.STA, proto.zeroPageMode, 0];
-    operations[149] = [proto.STA, proto.zeroPageXMode, 0];
-    operations[141] = [proto.STA, proto.absoluteMode, 0];
-    operations[157] = [proto.STA, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[153] = [proto.STA, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[129] = [proto.STA, proto.indirectXMode, 0];
-    operations[145] = [proto.STA, proto.indirectYMode, F_DOUBLE_READ];
-    operations[134] = [proto.STX, proto.zeroPageMode, 0];
-    operations[150] = [proto.STX, proto.zeroPageYMode, 0];
-    operations[142] = [proto.STX, proto.absoluteMode, 0];
-    operations[135] = [proto.SAX, proto.zeroPageMode, 0];
-    operations[151] = [proto.SAX, proto.zeroPageYMode, 0];
-    operations[143] = [proto.SAX, proto.absoluteMode, 0];
-    operations[131] = [proto.SAX, proto.indirectXMode, 0];
-    operations[132] = [proto.STY, proto.zeroPageMode, 0];
-    operations[148] = [proto.STY, proto.zeroPageXMode, 0];
-    operations[140] = [proto.STY, proto.absoluteMode, 0];
-    operations[147] = [proto.SHA, proto.indirectYMode, F_DOUBLE_READ];
-    operations[159] = [proto.SHA, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[158] = [proto.SHX, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[156] = [proto.SHY, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[169] = [proto.LDA, proto.immediateMode, 0];
-    operations[165] = [proto.LDA, proto.zeroPageMode, 0];
-    operations[181] = [proto.LDA, proto.zeroPageXMode, 0];
-    operations[173] = [proto.LDA, proto.absoluteMode, 0];
-    operations[189] = [proto.LDA, proto.absoluteXMode, 0];
-    operations[185] = [proto.LDA, proto.absoluteYMode, 0];
-    operations[161] = [proto.LDA, proto.indirectXMode, 0];
-    operations[177] = [proto.LDA, proto.indirectYMode, 0];
-    operations[162] = [proto.LDX, proto.immediateMode, 0];
-    operations[166] = [proto.LDX, proto.zeroPageMode, 0];
-    operations[182] = [proto.LDX, proto.zeroPageYMode, 0];
-    operations[174] = [proto.LDX, proto.absoluteMode, 0];
-    operations[190] = [proto.LDX, proto.absoluteYMode, 0];
-    operations[160] = [proto.LDY, proto.immediateMode, 0];
-    operations[164] = [proto.LDY, proto.zeroPageMode, 0];
-    operations[180] = [proto.LDY, proto.zeroPageXMode, 0];
-    operations[172] = [proto.LDY, proto.absoluteMode, 0];
-    operations[188] = [proto.LDY, proto.absoluteXMode, 0];
-    operations[171] = [proto.LAX, proto.immediateMode, 0];
-    operations[167] = [proto.LAX, proto.zeroPageMode, 0];
-    operations[183] = [proto.LAX, proto.zeroPageYMode, 0];
-    operations[175] = [proto.LAX, proto.absoluteMode, 0];
-    operations[191] = [proto.LAX, proto.absoluteYMode, 0];
-    operations[163] = [proto.LAX, proto.indirectXMode, 0];
-    operations[179] = [proto.LAX, proto.indirectYMode, 0];
-    operations[187] = [proto.LAS, proto.absoluteYMode, 0];
-    operations[170] = [proto.TAX, proto.impliedMode, 0];
-    operations[168] = [proto.TAY, proto.impliedMode, 0];
-    operations[138] = [proto.TXA, proto.impliedMode, 0];
-    operations[152] = [proto.TYA, proto.impliedMode, 0];
-    operations[154] = [proto.TXS, proto.impliedMode, 0];
-    operations[186] = [proto.TSX, proto.impliedMode, 0];
-    operations[72] = [proto.PHA, proto.impliedMode, 0];
-    operations[8] = [proto.PHP, proto.impliedMode, 0];
-    operations[104] = [proto.PLA, proto.impliedMode, 0];
-    operations[40] = [proto.PLP, proto.impliedMode, 0];
-    operations[41] = [proto.AND, proto.immediateMode, 0];
-    operations[37] = [proto.AND, proto.zeroPageMode, 0];
-    operations[53] = [proto.AND, proto.zeroPageXMode, 0];
-    operations[45] = [proto.AND, proto.absoluteMode, 0];
-    operations[61] = [proto.AND, proto.absoluteXMode, 0];
-    operations[57] = [proto.AND, proto.absoluteYMode, 0];
-    operations[33] = [proto.AND, proto.indirectXMode, 0];
-    operations[49] = [proto.AND, proto.indirectYMode, 0];
-    operations[9] = [proto.ORA, proto.immediateMode, 0];
-    operations[5] = [proto.ORA, proto.zeroPageMode, 0];
-    operations[21] = [proto.ORA, proto.zeroPageXMode, 0];
-    operations[13] = [proto.ORA, proto.absoluteMode, 0];
-    operations[29] = [proto.ORA, proto.absoluteXMode, 0];
-    operations[25] = [proto.ORA, proto.absoluteYMode, 0];
-    operations[1] = [proto.ORA, proto.indirectXMode, 0];
-    operations[17] = [proto.ORA, proto.indirectYMode, 0];
-    operations[73] = [proto.EOR, proto.immediateMode, 0];
-    operations[69] = [proto.EOR, proto.zeroPageMode, 0];
-    operations[85] = [proto.EOR, proto.zeroPageXMode, 0];
-    operations[77] = [proto.EOR, proto.absoluteMode, 0];
-    operations[93] = [proto.EOR, proto.absoluteXMode, 0];
-    operations[89] = [proto.EOR, proto.absoluteYMode, 0];
-    operations[65] = [proto.EOR, proto.indirectXMode, 0];
-    operations[81] = [proto.EOR, proto.indirectYMode, 0];
-    operations[36] = [proto.BIT, proto.zeroPageMode, 0];
-    operations[44] = [proto.BIT, proto.absoluteMode, 0];
-    operations[230] = [proto.INC, proto.zeroPageMode, 0];
-    operations[246] = [proto.INC, proto.zeroPageXMode, 0];
-    operations[238] = [proto.INC, proto.absoluteMode, 0];
-    operations[254] = [proto.INC, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[232] = [proto.INX, proto.impliedMode, 0];
-    operations[200] = [proto.INY, proto.impliedMode, 0];
-    operations[198] = [proto.DEC, proto.zeroPageMode, 0];
-    operations[214] = [proto.DEC, proto.zeroPageXMode, 0];
-    operations[206] = [proto.DEC, proto.absoluteMode, 0];
-    operations[222] = [proto.DEC, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[202] = [proto.DEX, proto.impliedMode, 0];
-    operations[136] = [proto.DEY, proto.impliedMode, 0];
-    operations[201] = [proto.CMP, proto.immediateMode, 0];
-    operations[197] = [proto.CMP, proto.zeroPageMode, 0];
-    operations[213] = [proto.CMP, proto.zeroPageXMode, 0];
-    operations[205] = [proto.CMP, proto.absoluteMode, 0];
-    operations[221] = [proto.CMP, proto.absoluteXMode, 0];
-    operations[217] = [proto.CMP, proto.absoluteYMode, 0];
-    operations[193] = [proto.CMP, proto.indirectXMode, 0];
-    operations[209] = [proto.CMP, proto.indirectYMode, 0];
-    operations[224] = [proto.CPX, proto.immediateMode, 0];
-    operations[228] = [proto.CPX, proto.zeroPageMode, 0];
-    operations[236] = [proto.CPX, proto.absoluteMode, 0];
-    operations[192] = [proto.CPY, proto.immediateMode, 0];
-    operations[196] = [proto.CPY, proto.zeroPageMode, 0];
-    operations[204] = [proto.CPY, proto.absoluteMode, 0];
-    operations[144] = [proto.BCC, proto.relativeMode, 0];
-    operations[176] = [proto.BCS, proto.relativeMode, 0];
-    operations[208] = [proto.BNE, proto.relativeMode, 0];
-    operations[240] = [proto.BEQ, proto.relativeMode, 0];
-    operations[80] = [proto.BVC, proto.relativeMode, 0];
-    operations[112] = [proto.BVS, proto.relativeMode, 0];
-    operations[16] = [proto.BPL, proto.relativeMode, 0];
-    operations[48] = [proto.BMI, proto.relativeMode, 0];
-    operations[76] = [proto.JMP, proto.absoluteMode, 0];
-    operations[108] = [proto.JMP, proto.indirectMode, 0];
-    operations[32] = [proto.JSR, proto.absoluteMode, 0];
-    operations[96] = [proto.RTS, proto.impliedMode, 0];
-    operations[0] = [proto.BRK, proto.impliedMode, 0];
-    operations[64] = [proto.RTI, proto.impliedMode, 0];
-    operations[105] = [proto.ADC, proto.immediateMode, 0];
-    operations[101] = [proto.ADC, proto.zeroPageMode, 0];
-    operations[117] = [proto.ADC, proto.zeroPageXMode, 0];
-    operations[109] = [proto.ADC, proto.absoluteMode, 0];
-    operations[125] = [proto.ADC, proto.absoluteXMode, 0];
-    operations[121] = [proto.ADC, proto.absoluteYMode, 0];
-    operations[97] = [proto.ADC, proto.indirectXMode, 0];
-    operations[113] = [proto.ADC, proto.indirectYMode, 0];
-    operations[233] = [proto.SBC, proto.immediateMode, 0];
-    operations[235] = [proto.SBC, proto.immediateMode, 0];
-    operations[229] = [proto.SBC, proto.zeroPageMode, 0];
-    operations[245] = [proto.SBC, proto.zeroPageXMode, 0];
-    operations[237] = [proto.SBC, proto.absoluteMode, 0];
-    operations[253] = [proto.SBC, proto.absoluteXMode, 0];
-    operations[249] = [proto.SBC, proto.absoluteYMode, 0];
-    operations[225] = [proto.SBC, proto.indirectXMode, 0];
-    operations[241] = [proto.SBC, proto.indirectYMode, 0];
-    operations[10] = [proto.ASL, proto.accumulatorMode, 0];
-    operations[6] = [proto.ASL, proto.zeroPageMode, 0];
-    operations[22] = [proto.ASL, proto.zeroPageXMode, 0];
-    operations[14] = [proto.ASL, proto.absoluteMode, 0];
-    operations[30] = [proto.ASL, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[74] = [proto.LSR, proto.accumulatorMode, 0];
-    operations[70] = [proto.LSR, proto.zeroPageMode, 0];
-    operations[86] = [proto.LSR, proto.zeroPageXMode, 0];
-    operations[78] = [proto.LSR, proto.absoluteMode, 0];
-    operations[94] = [proto.LSR, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[42] = [proto.ROL, proto.accumulatorMode, 0];
-    operations[38] = [proto.ROL, proto.zeroPageMode, 0];
-    operations[54] = [proto.ROL, proto.zeroPageXMode, 0];
-    operations[46] = [proto.ROL, proto.absoluteMode, 0];
-    operations[62] = [proto.ROL, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[106] = [proto.ROR, proto.accumulatorMode, 0];
-    operations[102] = [proto.ROR, proto.zeroPageMode, 0];
-    operations[118] = [proto.ROR, proto.zeroPageXMode, 0];
-    operations[110] = [proto.ROR, proto.absoluteMode, 0];
-    operations[126] = [proto.ROR, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[199] = [proto.DCP, proto.zeroPageMode, 0];
-    operations[215] = [proto.DCP, proto.zeroPageXMode, 0];
-    operations[207] = [proto.DCP, proto.absoluteMode, 0];
-    operations[223] = [proto.DCP, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[219] = [proto.DCP, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[195] = [proto.DCP, proto.indirectXMode, 0];
-    operations[211] = [proto.DCP, proto.indirectYMode, F_DOUBLE_READ];
-    operations[231] = [proto.ISB, proto.zeroPageMode, 0];
-    operations[247] = [proto.ISB, proto.zeroPageXMode, 0];
-    operations[239] = [proto.ISB, proto.absoluteMode, 0];
-    operations[255] = [proto.ISB, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[251] = [proto.ISB, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[227] = [proto.ISB, proto.indirectXMode, 0];
-    operations[243] = [proto.ISB, proto.indirectYMode, F_DOUBLE_READ];
-    operations[7] = [proto.SLO, proto.zeroPageMode, 0];
-    operations[23] = [proto.SLO, proto.zeroPageXMode, 0];
-    operations[15] = [proto.SLO, proto.absoluteMode, 0];
-    operations[31] = [proto.SLO, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[27] = [proto.SLO, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[3] = [proto.SLO, proto.indirectXMode, 0];
-    operations[19] = [proto.SLO, proto.indirectYMode, F_DOUBLE_READ];
-    operations[71] = [proto.SRE, proto.zeroPageMode, 0];
-    operations[87] = [proto.SRE, proto.zeroPageXMode, 0];
-    operations[79] = [proto.SRE, proto.absoluteMode, 0];
-    operations[95] = [proto.SRE, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[91] = [proto.SRE, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[67] = [proto.SRE, proto.indirectXMode, 0];
-    operations[83] = [proto.SRE, proto.indirectYMode, F_DOUBLE_READ];
-    operations[39] = [proto.RLA, proto.zeroPageMode, 0];
-    operations[55] = [proto.RLA, proto.zeroPageXMode, 0];
-    operations[47] = [proto.RLA, proto.absoluteMode, 0];
-    operations[63] = [proto.RLA, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[59] = [proto.RLA, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[35] = [proto.RLA, proto.indirectXMode, 0];
-    operations[51] = [proto.RLA, proto.indirectYMode, F_DOUBLE_READ];
-    operations[139] = [proto.XAA, proto.immediateMode, 0];
-    operations[103] = [proto.RRA, proto.zeroPageMode, 0];
-    operations[119] = [proto.RRA, proto.zeroPageXMode, 0];
-    operations[111] = [proto.RRA, proto.absoluteMode, 0];
-    operations[127] = [proto.RRA, proto.absoluteXMode, F_DOUBLE_READ];
-    operations[123] = [proto.RRA, proto.absoluteYMode, F_DOUBLE_READ];
-    operations[99] = [proto.RRA, proto.indirectXMode, 0];
-    operations[115] = [proto.RRA, proto.indirectYMode, F_DOUBLE_READ];
-    operations[203] = [proto.AXS, proto.immediateMode, 0];
-    operations[11] = [proto.ANC, proto.immediateMode, 0];
-    operations[43] = [proto.ANC, proto.immediateMode, 0];
-    operations[75] = [proto.ALR, proto.immediateMode, 0];
-    operations[107] = [proto.ARR, proto.immediateMode, 0];
-    operations[155] = [proto.TAS, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[26] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[58] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[90] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[122] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[218] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[234] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[250] = [proto.NOP, proto.impliedMode, 0];
+    exports2.operations[128] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
+    exports2.operations[130] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
+    exports2.operations[137] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
+    exports2.operations[194] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
+    exports2.operations[226] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
+    exports2.operations[4] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
+    exports2.operations[68] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
+    exports2.operations[100] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
+    exports2.operations[20] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
+    exports2.operations[52] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
+    exports2.operations[84] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
+    exports2.operations[116] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
+    exports2.operations[212] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
+    exports2.operations[244] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
+    exports2.operations[12] = [proto.NOP, proto.absoluteMode, F_EXTRA_CYCLE];
+    exports2.operations[28] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
+    exports2.operations[60] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
+    exports2.operations[92] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
+    exports2.operations[124] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
+    exports2.operations[220] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
+    exports2.operations[252] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
+    exports2.operations[24] = [proto.CLC, proto.impliedMode, 0];
+    exports2.operations[88] = [proto.CLI, proto.impliedMode, 0];
+    exports2.operations[216] = [proto.CLD, proto.impliedMode, 0];
+    exports2.operations[184] = [proto.CLV, proto.impliedMode, 0];
+    exports2.operations[56] = [proto.SEC, proto.impliedMode, 0];
+    exports2.operations[120] = [proto.SEI, proto.impliedMode, 0];
+    exports2.operations[248] = [proto.SED, proto.impliedMode, 0];
+    exports2.operations[133] = [proto.STA, proto.zeroPageMode, 0];
+    exports2.operations[149] = [proto.STA, proto.zeroPageXMode, 0];
+    exports2.operations[141] = [proto.STA, proto.absoluteMode, 0];
+    exports2.operations[157] = [proto.STA, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[153] = [proto.STA, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[129] = [proto.STA, proto.indirectXMode, 0];
+    exports2.operations[145] = [proto.STA, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[134] = [proto.STX, proto.zeroPageMode, 0];
+    exports2.operations[150] = [proto.STX, proto.zeroPageYMode, 0];
+    exports2.operations[142] = [proto.STX, proto.absoluteMode, 0];
+    exports2.operations[135] = [proto.SAX, proto.zeroPageMode, 0];
+    exports2.operations[151] = [proto.SAX, proto.zeroPageYMode, 0];
+    exports2.operations[143] = [proto.SAX, proto.absoluteMode, 0];
+    exports2.operations[131] = [proto.SAX, proto.indirectXMode, 0];
+    exports2.operations[132] = [proto.STY, proto.zeroPageMode, 0];
+    exports2.operations[148] = [proto.STY, proto.zeroPageXMode, 0];
+    exports2.operations[140] = [proto.STY, proto.absoluteMode, 0];
+    exports2.operations[147] = [proto.SHA, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[159] = [proto.SHA, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[158] = [proto.SHX, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[156] = [proto.SHY, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[169] = [proto.LDA, proto.immediateMode, 0];
+    exports2.operations[165] = [proto.LDA, proto.zeroPageMode, 0];
+    exports2.operations[181] = [proto.LDA, proto.zeroPageXMode, 0];
+    exports2.operations[173] = [proto.LDA, proto.absoluteMode, 0];
+    exports2.operations[189] = [proto.LDA, proto.absoluteXMode, 0];
+    exports2.operations[185] = [proto.LDA, proto.absoluteYMode, 0];
+    exports2.operations[161] = [proto.LDA, proto.indirectXMode, 0];
+    exports2.operations[177] = [proto.LDA, proto.indirectYMode, 0];
+    exports2.operations[162] = [proto.LDX, proto.immediateMode, 0];
+    exports2.operations[166] = [proto.LDX, proto.zeroPageMode, 0];
+    exports2.operations[182] = [proto.LDX, proto.zeroPageYMode, 0];
+    exports2.operations[174] = [proto.LDX, proto.absoluteMode, 0];
+    exports2.operations[190] = [proto.LDX, proto.absoluteYMode, 0];
+    exports2.operations[160] = [proto.LDY, proto.immediateMode, 0];
+    exports2.operations[164] = [proto.LDY, proto.zeroPageMode, 0];
+    exports2.operations[180] = [proto.LDY, proto.zeroPageXMode, 0];
+    exports2.operations[172] = [proto.LDY, proto.absoluteMode, 0];
+    exports2.operations[188] = [proto.LDY, proto.absoluteXMode, 0];
+    exports2.operations[171] = [proto.LAX, proto.immediateMode, 0];
+    exports2.operations[167] = [proto.LAX, proto.zeroPageMode, 0];
+    exports2.operations[183] = [proto.LAX, proto.zeroPageYMode, 0];
+    exports2.operations[175] = [proto.LAX, proto.absoluteMode, 0];
+    exports2.operations[191] = [proto.LAX, proto.absoluteYMode, 0];
+    exports2.operations[163] = [proto.LAX, proto.indirectXMode, 0];
+    exports2.operations[179] = [proto.LAX, proto.indirectYMode, 0];
+    exports2.operations[187] = [proto.LAS, proto.absoluteYMode, 0];
+    exports2.operations[170] = [proto.TAX, proto.impliedMode, 0];
+    exports2.operations[168] = [proto.TAY, proto.impliedMode, 0];
+    exports2.operations[138] = [proto.TXA, proto.impliedMode, 0];
+    exports2.operations[152] = [proto.TYA, proto.impliedMode, 0];
+    exports2.operations[154] = [proto.TXS, proto.impliedMode, 0];
+    exports2.operations[186] = [proto.TSX, proto.impliedMode, 0];
+    exports2.operations[72] = [proto.PHA, proto.impliedMode, 0];
+    exports2.operations[8] = [proto.PHP, proto.impliedMode, 0];
+    exports2.operations[104] = [proto.PLA, proto.impliedMode, 0];
+    exports2.operations[40] = [proto.PLP, proto.impliedMode, 0];
+    exports2.operations[41] = [proto.AND, proto.immediateMode, 0];
+    exports2.operations[37] = [proto.AND, proto.zeroPageMode, 0];
+    exports2.operations[53] = [proto.AND, proto.zeroPageXMode, 0];
+    exports2.operations[45] = [proto.AND, proto.absoluteMode, 0];
+    exports2.operations[61] = [proto.AND, proto.absoluteXMode, 0];
+    exports2.operations[57] = [proto.AND, proto.absoluteYMode, 0];
+    exports2.operations[33] = [proto.AND, proto.indirectXMode, 0];
+    exports2.operations[49] = [proto.AND, proto.indirectYMode, 0];
+    exports2.operations[9] = [proto.ORA, proto.immediateMode, 0];
+    exports2.operations[5] = [proto.ORA, proto.zeroPageMode, 0];
+    exports2.operations[21] = [proto.ORA, proto.zeroPageXMode, 0];
+    exports2.operations[13] = [proto.ORA, proto.absoluteMode, 0];
+    exports2.operations[29] = [proto.ORA, proto.absoluteXMode, 0];
+    exports2.operations[25] = [proto.ORA, proto.absoluteYMode, 0];
+    exports2.operations[1] = [proto.ORA, proto.indirectXMode, 0];
+    exports2.operations[17] = [proto.ORA, proto.indirectYMode, 0];
+    exports2.operations[73] = [proto.EOR, proto.immediateMode, 0];
+    exports2.operations[69] = [proto.EOR, proto.zeroPageMode, 0];
+    exports2.operations[85] = [proto.EOR, proto.zeroPageXMode, 0];
+    exports2.operations[77] = [proto.EOR, proto.absoluteMode, 0];
+    exports2.operations[93] = [proto.EOR, proto.absoluteXMode, 0];
+    exports2.operations[89] = [proto.EOR, proto.absoluteYMode, 0];
+    exports2.operations[65] = [proto.EOR, proto.indirectXMode, 0];
+    exports2.operations[81] = [proto.EOR, proto.indirectYMode, 0];
+    exports2.operations[36] = [proto.BIT, proto.zeroPageMode, 0];
+    exports2.operations[44] = [proto.BIT, proto.absoluteMode, 0];
+    exports2.operations[230] = [proto.INC, proto.zeroPageMode, 0];
+    exports2.operations[246] = [proto.INC, proto.zeroPageXMode, 0];
+    exports2.operations[238] = [proto.INC, proto.absoluteMode, 0];
+    exports2.operations[254] = [proto.INC, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[232] = [proto.INX, proto.impliedMode, 0];
+    exports2.operations[200] = [proto.INY, proto.impliedMode, 0];
+    exports2.operations[198] = [proto.DEC, proto.zeroPageMode, 0];
+    exports2.operations[214] = [proto.DEC, proto.zeroPageXMode, 0];
+    exports2.operations[206] = [proto.DEC, proto.absoluteMode, 0];
+    exports2.operations[222] = [proto.DEC, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[202] = [proto.DEX, proto.impliedMode, 0];
+    exports2.operations[136] = [proto.DEY, proto.impliedMode, 0];
+    exports2.operations[201] = [proto.CMP, proto.immediateMode, 0];
+    exports2.operations[197] = [proto.CMP, proto.zeroPageMode, 0];
+    exports2.operations[213] = [proto.CMP, proto.zeroPageXMode, 0];
+    exports2.operations[205] = [proto.CMP, proto.absoluteMode, 0];
+    exports2.operations[221] = [proto.CMP, proto.absoluteXMode, 0];
+    exports2.operations[217] = [proto.CMP, proto.absoluteYMode, 0];
+    exports2.operations[193] = [proto.CMP, proto.indirectXMode, 0];
+    exports2.operations[209] = [proto.CMP, proto.indirectYMode, 0];
+    exports2.operations[224] = [proto.CPX, proto.immediateMode, 0];
+    exports2.operations[228] = [proto.CPX, proto.zeroPageMode, 0];
+    exports2.operations[236] = [proto.CPX, proto.absoluteMode, 0];
+    exports2.operations[192] = [proto.CPY, proto.immediateMode, 0];
+    exports2.operations[196] = [proto.CPY, proto.zeroPageMode, 0];
+    exports2.operations[204] = [proto.CPY, proto.absoluteMode, 0];
+    exports2.operations[144] = [proto.BCC, proto.relativeMode, 0];
+    exports2.operations[176] = [proto.BCS, proto.relativeMode, 0];
+    exports2.operations[208] = [proto.BNE, proto.relativeMode, 0];
+    exports2.operations[240] = [proto.BEQ, proto.relativeMode, 0];
+    exports2.operations[80] = [proto.BVC, proto.relativeMode, 0];
+    exports2.operations[112] = [proto.BVS, proto.relativeMode, 0];
+    exports2.operations[16] = [proto.BPL, proto.relativeMode, 0];
+    exports2.operations[48] = [proto.BMI, proto.relativeMode, 0];
+    exports2.operations[76] = [proto.JMP, proto.absoluteMode, 0];
+    exports2.operations[108] = [proto.JMP, proto.indirectMode, 0];
+    exports2.operations[32] = [proto.JSR, proto.absoluteMode, 0];
+    exports2.operations[96] = [proto.RTS, proto.impliedMode, 0];
+    exports2.operations[0] = [proto.BRK, proto.impliedMode, 0];
+    exports2.operations[64] = [proto.RTI, proto.impliedMode, 0];
+    exports2.operations[105] = [proto.ADC, proto.immediateMode, 0];
+    exports2.operations[101] = [proto.ADC, proto.zeroPageMode, 0];
+    exports2.operations[117] = [proto.ADC, proto.zeroPageXMode, 0];
+    exports2.operations[109] = [proto.ADC, proto.absoluteMode, 0];
+    exports2.operations[125] = [proto.ADC, proto.absoluteXMode, 0];
+    exports2.operations[121] = [proto.ADC, proto.absoluteYMode, 0];
+    exports2.operations[97] = [proto.ADC, proto.indirectXMode, 0];
+    exports2.operations[113] = [proto.ADC, proto.indirectYMode, 0];
+    exports2.operations[233] = [proto.SBC, proto.immediateMode, 0];
+    exports2.operations[235] = [proto.SBC, proto.immediateMode, 0];
+    exports2.operations[229] = [proto.SBC, proto.zeroPageMode, 0];
+    exports2.operations[245] = [proto.SBC, proto.zeroPageXMode, 0];
+    exports2.operations[237] = [proto.SBC, proto.absoluteMode, 0];
+    exports2.operations[253] = [proto.SBC, proto.absoluteXMode, 0];
+    exports2.operations[249] = [proto.SBC, proto.absoluteYMode, 0];
+    exports2.operations[225] = [proto.SBC, proto.indirectXMode, 0];
+    exports2.operations[241] = [proto.SBC, proto.indirectYMode, 0];
+    exports2.operations[10] = [proto.ASL, proto.accumulatorMode, 0];
+    exports2.operations[6] = [proto.ASL, proto.zeroPageMode, 0];
+    exports2.operations[22] = [proto.ASL, proto.zeroPageXMode, 0];
+    exports2.operations[14] = [proto.ASL, proto.absoluteMode, 0];
+    exports2.operations[30] = [proto.ASL, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[74] = [proto.LSR, proto.accumulatorMode, 0];
+    exports2.operations[70] = [proto.LSR, proto.zeroPageMode, 0];
+    exports2.operations[86] = [proto.LSR, proto.zeroPageXMode, 0];
+    exports2.operations[78] = [proto.LSR, proto.absoluteMode, 0];
+    exports2.operations[94] = [proto.LSR, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[42] = [proto.ROL, proto.accumulatorMode, 0];
+    exports2.operations[38] = [proto.ROL, proto.zeroPageMode, 0];
+    exports2.operations[54] = [proto.ROL, proto.zeroPageXMode, 0];
+    exports2.operations[46] = [proto.ROL, proto.absoluteMode, 0];
+    exports2.operations[62] = [proto.ROL, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[106] = [proto.ROR, proto.accumulatorMode, 0];
+    exports2.operations[102] = [proto.ROR, proto.zeroPageMode, 0];
+    exports2.operations[118] = [proto.ROR, proto.zeroPageXMode, 0];
+    exports2.operations[110] = [proto.ROR, proto.absoluteMode, 0];
+    exports2.operations[126] = [proto.ROR, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[199] = [proto.DCP, proto.zeroPageMode, 0];
+    exports2.operations[215] = [proto.DCP, proto.zeroPageXMode, 0];
+    exports2.operations[207] = [proto.DCP, proto.absoluteMode, 0];
+    exports2.operations[223] = [proto.DCP, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[219] = [proto.DCP, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[195] = [proto.DCP, proto.indirectXMode, 0];
+    exports2.operations[211] = [proto.DCP, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[231] = [proto.ISB, proto.zeroPageMode, 0];
+    exports2.operations[247] = [proto.ISB, proto.zeroPageXMode, 0];
+    exports2.operations[239] = [proto.ISB, proto.absoluteMode, 0];
+    exports2.operations[255] = [proto.ISB, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[251] = [proto.ISB, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[227] = [proto.ISB, proto.indirectXMode, 0];
+    exports2.operations[243] = [proto.ISB, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[7] = [proto.SLO, proto.zeroPageMode, 0];
+    exports2.operations[23] = [proto.SLO, proto.zeroPageXMode, 0];
+    exports2.operations[15] = [proto.SLO, proto.absoluteMode, 0];
+    exports2.operations[31] = [proto.SLO, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[27] = [proto.SLO, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[3] = [proto.SLO, proto.indirectXMode, 0];
+    exports2.operations[19] = [proto.SLO, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[71] = [proto.SRE, proto.zeroPageMode, 0];
+    exports2.operations[87] = [proto.SRE, proto.zeroPageXMode, 0];
+    exports2.operations[79] = [proto.SRE, proto.absoluteMode, 0];
+    exports2.operations[95] = [proto.SRE, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[91] = [proto.SRE, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[67] = [proto.SRE, proto.indirectXMode, 0];
+    exports2.operations[83] = [proto.SRE, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[39] = [proto.RLA, proto.zeroPageMode, 0];
+    exports2.operations[55] = [proto.RLA, proto.zeroPageXMode, 0];
+    exports2.operations[47] = [proto.RLA, proto.absoluteMode, 0];
+    exports2.operations[63] = [proto.RLA, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[59] = [proto.RLA, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[35] = [proto.RLA, proto.indirectXMode, 0];
+    exports2.operations[51] = [proto.RLA, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[139] = [proto.XAA, proto.immediateMode, 0];
+    exports2.operations[103] = [proto.RRA, proto.zeroPageMode, 0];
+    exports2.operations[119] = [proto.RRA, proto.zeroPageXMode, 0];
+    exports2.operations[111] = [proto.RRA, proto.absoluteMode, 0];
+    exports2.operations[127] = [proto.RRA, proto.absoluteXMode, F_DOUBLE_READ];
+    exports2.operations[123] = [proto.RRA, proto.absoluteYMode, F_DOUBLE_READ];
+    exports2.operations[99] = [proto.RRA, proto.indirectXMode, 0];
+    exports2.operations[115] = [proto.RRA, proto.indirectYMode, F_DOUBLE_READ];
+    exports2.operations[203] = [proto.AXS, proto.immediateMode, 0];
+    exports2.operations[11] = [proto.ANC, proto.immediateMode, 0];
+    exports2.operations[43] = [proto.ANC, proto.immediateMode, 0];
+    exports2.operations[75] = [proto.ALR, proto.immediateMode, 0];
+    exports2.operations[107] = [proto.ARR, proto.immediateMode, 0];
+    exports2.operations[155] = [proto.TAS, proto.absoluteYMode, F_DOUBLE_READ];
   }
 });
 
@@ -4678,6 +4674,8 @@ var require_NES = __commonJS({
     var video_1 = require_video();
     var proc_1 = require_proc();
     var audio_1 = require_audio();
+    var interrupts_1 = require_interrupts();
+    var CPU_1 = require_CPU();
     var NES = (
       /** @class */
       function() {
@@ -4788,6 +4786,56 @@ var require_NES = __commonJS({
           var time = now();
           while (!this.ppu.isFrameAvailable()) {
             this.cpu.step();
+            var blocked = this.dma.cycle < 512;
+            if (this.cpu.activeInterrupts && !blocked) {
+              this.cpu.resolveInterrupt();
+              if (this.cpu.activeInterrupts & interrupts_1.RESET) {
+                this.cpu.handleReset();
+              } else if (this.cpu.activeInterrupts & interrupts_1.NMI) {
+                this.cpu.handleNMI();
+              } else if (this.cpu.irqDisabled) {
+                return;
+              } else {
+                this.cpu.handleIRQ();
+              }
+              for (var i = 0; i < 2; i++) {
+                if (this.dma.cycle < 512) {
+                  this.dma.cycle++;
+                  if (this.dma.cycle & 1) {
+                    var address = this.dma.baseAddress + (this.dma.cycle >> 1);
+                    var data = address < 8192 ? this.cpuMemory.ram[address & 2047] : this.cpuMemory.read(address);
+                    this.cpuMemory.write(8196, data);
+                  }
+                }
+                this.ppu.tick();
+                this.ppu.tick();
+                this.ppu.tick();
+              }
+            }
+            if (this.cpu.halted || blocked) {
+              if (this.dma.cycle < 512) {
+                this.dma.cycle++;
+                if (this.dma.cycle & 1) {
+                  var address = this.dma.baseAddress + (this.dma.cycle >> 1);
+                  var data = address < 8192 ? this.cpuMemory.ram[address & 2047] : this.cpuMemory.read(address);
+                  this.cpuMemory.write(8196, data);
+                }
+              }
+              this.ppu.tick();
+              this.ppu.tick();
+              this.ppu.tick();
+            } else {
+              var nextProgramByte = this.cpu.readNextProgramByte();
+              if (CPU_1.operations[nextProgramByte]) {
+                this.cpu.irqDisabled = this.cpu.interruptFlag;
+                this.cpu.operationFlags = CPU_1.operations[nextProgramByte][2];
+                var effectiveAddress = CPU_1.operations[nextProgramByte][1].call(this.cpu);
+                CPU_1.operations[nextProgramByte][0].call(this.cpu, effectiveAddress);
+              } else {
+                common_1.log.warn("CPU halted!");
+                this.cpu.halted = true;
+              }
+            }
           }
           console.log("this.ppu.isFrameAvailable time:", now() - time);
         };
@@ -5511,11 +5559,9 @@ async function main() {
   nes.setPalette(palette);
   var videoSprite = new Uint8Array(index_js_1.VIDEO_WIDTH * index_js_1.VIDEO_HEIGHT);
   nes.setRegion(null);
-  var time = now();
   console.log("starting...");
   nes.setFrameBuffer(videoSprite);
   while (true) {
-    time = now();
     if (keyboard_1.default.getNextPress()) {
       joypad.setButtonPressed(index_js_1.Button.RIGHT, true);
       getNextPressDown = true;
@@ -5537,9 +5583,7 @@ async function main() {
       joypad.setButtonPressed(index_js_1.Button.START, false);
       getSelPressDown = false;
     }
-    time = now();
     nes.renderFrame();
-    console.log("nes.renderFrame time:", now() - time);
     display_1.default.drawBitmap(0, -80, videoSprite, index_js_1.VIDEO_WIDTH, index_js_1.VIDEO_HEIGHT, 8);
     await delay(24);
   }

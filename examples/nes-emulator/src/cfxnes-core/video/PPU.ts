@@ -574,9 +574,6 @@ export default class PPU {
 
     if (this.scanline <= 239) {
       this.clearSprites();
-      // @ts-ignore
-      this.spriteCache.fill(null);
-      this.spritePixelCache.fill(0);
 
       if (this.scanline > 0) {
         this.preRenderSprites(); // Sprites are not rendered on scanline 0
@@ -599,9 +596,6 @@ export default class PPU {
       this.fetchData();
       this.doRendering();
       this.updateScrolling();
-    } else {
-      this.skipRendering();
-      this.addressBus = this.vramAddress;
     }
     this.updateVBlank();
     this.incrementCycle();

@@ -15,7 +15,7 @@ const NMI_ADDRESS = 0xFFFA;
 const IRQ_ADDRESS = 0xFFFE;
 
 // Table of all CPU operations, changed to function
-const operations = new Array<[Function, Function, number]>(0xFF);
+export const operations = new Array<[Function, Function, number]>(0xFF);
 
 export default class CPU {
 
@@ -359,7 +359,7 @@ export default class CPU {
 
   tick() {
     // this.mapper.tick();
-     // ppu 3 times faster than CPU
+    // ppu 3 times faster than CPU
     this.dma.tick();
     this.ppu.tick();
     this.ppu.tick();

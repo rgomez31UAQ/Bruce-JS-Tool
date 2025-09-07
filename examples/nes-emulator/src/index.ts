@@ -77,13 +77,11 @@ function main() {
   const videoSprite = new Uint8Array(VIDEO_WIDTH * VIDEO_HEIGHT);
   nes.setRegion(null);
 
-  let time = now();
   console.log('starting...');
 
   nes.setFrameBuffer(videoSprite);
 
   while (true) {
-    time = now();
     if (keyboard.getNextPress()) {
       joypad.setButtonPressed(Button.RIGHT, true);
       getNextPressDown = true;
@@ -108,9 +106,7 @@ function main() {
       getSelPressDown = false;
     }
 
-    time = now();
     nes.renderFrame();
-    console.log('nes.renderFrame time:', now() - time);
 
     display.drawBitmap(0, -80, videoSprite, VIDEO_WIDTH, VIDEO_HEIGHT, 8);
 

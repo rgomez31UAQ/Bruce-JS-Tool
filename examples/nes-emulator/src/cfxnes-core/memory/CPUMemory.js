@@ -81,7 +81,7 @@ export default class CPUMemory {
     if (address >= 0x8000) {
       return this.readPRGROM(address);    // $8000-$FFFF
     } else if (address < 0x2000) {
-      return this.readRAM(address);       // $0000-$1FFF
+      return this.ram[address & 0x07FF];       // $0000-$1FFF
     } else if (address < 0x4020) {
       return this.readRegister(address); // $2000-$401F
     } else if (address >= 0x6000) {
@@ -94,7 +94,7 @@ export default class CPUMemory {
     if (address >= 0x8000) {
       this.writePRGROM(address, value);    // $8000-$FFFF
     } else if (address < 0x2000) {
-      this.writeRAM(address, value);       // $0000-$1FFF
+      this.ram[address & 0x07FF] = value;       // $0000-$1FFF
     } else if (address < 0x4020) {
       this.writeRegister(address, value); // $2000-$401F
     } else if (address >= 0x6000) {

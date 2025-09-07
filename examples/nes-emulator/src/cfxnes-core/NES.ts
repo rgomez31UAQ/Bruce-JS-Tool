@@ -7,6 +7,8 @@ import Mapper from './memory/mappers/Mapper';
 import { Cartridge } from './cartridge/create';
 import display from 'display';
 import { Joypad, Zapper } from './devices';
+import { NMI, RESET } from './proc/interrupts';
+import { operations } from './proc/CPU';
 
 export default class NES {
   cpu: CPU;
@@ -174,33 +176,64 @@ export default class NES {
     let time = now();
     while (!this.ppu.isFrameAvailable()) {
       this.cpu.step();
+      const blocked = this.dma.cycle < 512;
+      if (this.cpu.activeInterrupts && !blocked) {
+        this.cpu.resolveInterrupt();
+        if (this.cpu.activeInterrupts & RESET) {
+          this.cpu.handleReset();
+        } else if (this.cpu.activeInterrupts & NMI) {
+          this.cpu.handleNMI();
+        } else if (this.cpu.irqDisabled) {
+          return; // IRQ requested, but disabled
+        } else {
+          this.cpu.handleIRQ();
+        }
 
-      // this.cpu.dma.tick();
-      // // if (this.cpu.dma.cycle < 512) { // this.cpu.dma.isBlockingCPU()
-      // //   this.cpu.dma.cycle++;
-      // //   if (this.cpu.dma.cycle & 1) {
-      // //     // this.cpu.dma.transferData(); // Each even cycle
-      // //     const address = this.cpu.dma.baseAddress + (this.cpu.dma.cycle >> 1);
-      // //     const data = this.cpuMemory.read(address);
-      // //     this.cpuMemory.write(0x2004, data);
-          
-      // //     // if (address >= 0x8000) {
-      // //     //   this.cpuMemory.writePRGROM(address, data);    // $8000-$FFFF
-      // //     // } else if (address < 0x2000) {
-      // //     //   this.cpuMemory.writeRAM(address, data);       // $0000-$1FFF
-      // //     //   // this.cpuMemory.ram[address & 0x07FF] = data;
-      // //     // } else if (address < 0x4020) {
-      // //     //   this.cpuMemory.writeRegister(address, data); // $2000-$401F
-      // //     // } else if (address >= 0x6000) {
-      // //     //   this.cpuMemory.writePRGRAM(address, data);    // $6000-$7FFF
-      // //     // } else {
-      // //     //   this.cpuMemory.writeEXROM(address, data);     // $4020-$5FFF
-      // //     // }
-      // //   }
-      // // }
-      // this.cpu.ppu.tick();
-      // this.cpu.ppu.tick();
-      // this.cpu.ppu.tick();
+        for (let i = 0; i < 2; i++) {
+          if (this.dma.cycle < 512) {
+            this.dma.cycle++;
+            if (this.dma.cycle & 1) {
+              const address = this.dma.baseAddress + (this.dma.cycle >> 1);
+              const data = address < 0x2000 ? this.cpuMemory.ram[address & 0x07FF] : this.cpuMemory.read(address);
+              this.cpuMemory.write(0x2004, data);
+            }
+          }
+          this.ppu.tick();
+          this.ppu.tick();
+          this.ppu.tick();
+        }
+      }
+
+      if (this.cpu.halted || blocked) {
+        if (this.dma.cycle < 512) {
+          this.dma.cycle++;
+          if (this.dma.cycle & 1) {
+            const address = this.dma.baseAddress + (this.dma.cycle >> 1);
+            const data = address < 0x2000 ? this.cpuMemory.ram[address & 0x07FF] : this.cpuMemory.read(address);
+            this.cpuMemory.write(0x2004, data);
+          }
+        }
+        this.ppu.tick();
+        this.ppu.tick();
+        this.ppu.tick();
+      } else {
+        // this.cpu.readAndExecuteOperation();
+        const nextProgramByte = this.cpu.readNextProgramByte();
+        if (operations[nextProgramByte]) {
+          // this.cpu.beforeOperation(operation);
+          // this.cpu.executeOperation(operation);
+
+          this.cpu.irqDisabled = this.cpu.interruptFlag;
+          this.cpu.operationFlags = operations[nextProgramByte][2];
+    
+          const effectiveAddress = operations[nextProgramByte][1].call(this.cpu);
+          operations[nextProgramByte][0].call(this.cpu, effectiveAddress);
+    
+        } else {
+          log.warn('CPU halted!');
+          this.cpu.halted = true; // CPU halt (KIL operation code)
+        }
+      }
     }
     console.log('this.ppu.isFrameAvailable time:', now() - time);
   }
