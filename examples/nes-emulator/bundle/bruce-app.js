@@ -782,7 +782,12 @@ var require_DMA = __commonJS({
           if (this.cycle < 512) {
             this.cycle++;
             if (this.cycle & 1) {
-              this.transferData();
+              var address = this.cpuMemory.dma.baseAddress + (this.cpuMemory.dma.cycle >> 1);
+              var data = address < 8192 ? this.cpuMemory.ram[address & 2047] : this.cpuMemory.read(address);
+              if (!(!this.cpuMemory.ppu.vblankActive && (this.cpuMemory.ppu.spritesVisible || this.cpuMemory.ppu.backgroundVisible))) {
+                this.cpuMemory.ppu.primaryOAM[this.cpuMemory.ppu.oamAddress] = data;
+              }
+              this.cpuMemory.ppu.oamAddress = this.cpuMemory.ppu.oamAddress + 1 & 255;
             }
           }
         };
@@ -1958,7 +1963,7 @@ var require_flags = __commonJS({
   "dist/cfxnes-core/video/flags.js": function(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.SKIP = exports2.VB_END = exports2.VB_START2 = exports2.VB_START = exports2.COPY_VS = exports2.COPY_HS = exports2.INC_FY = exports2.INC_CX = exports2.CLIP_TB = exports2.CLIP_LEFT = exports2.EVAL_SP = exports2.SHIFT_BG = exports2.COPY_BG = exports2.FETCH_SPH = exports2.FETCH_SPL = exports2.FETCH_BGH = exports2.FETCH_BGL = exports2.FETCH_AT = exports2.FETCH_NT = exports2.RENDER = void 0;
+    exports2.cycles = exports2.scanlines = exports2.SKIP = exports2.VB_END = exports2.VB_START2 = exports2.VB_START = exports2.COPY_VS = exports2.COPY_HS = exports2.INC_FY = exports2.INC_CX = exports2.CLIP_TB = exports2.CLIP_LEFT = exports2.EVAL_SP = exports2.SHIFT_BG = exports2.COPY_BG = exports2.FETCH_SPH = exports2.FETCH_SPL = exports2.FETCH_BGH = exports2.FETCH_BGL = exports2.FETCH_AT = exports2.FETCH_NT = exports2.RENDER = void 0;
     exports2.compute = compute;
     exports2.RENDER = 1 << 1;
     exports2.FETCH_NT = 1 << 2;
@@ -1980,82 +1985,82 @@ var require_flags = __commonJS({
     exports2.VB_START2 = 1 << 18;
     exports2.VB_END = 1 << 19;
     exports2.SKIP = 1 << 20;
-    var scanlines = new Uint32Array(262);
-    for (i = 0; i < scanlines.length; i++) {
+    exports2.scanlines = new Uint32Array(262);
+    for (i = 0; i < exports2.scanlines.length; i++) {
       if (i <= 239) {
-        scanlines[i] |= exports2.RENDER;
-        scanlines[i] |= exports2.SHIFT_BG;
-        scanlines[i] |= exports2.CLIP_LEFT;
-        scanlines[i] |= exports2.EVAL_SP;
+        exports2.scanlines[i] |= exports2.RENDER;
+        exports2.scanlines[i] |= exports2.SHIFT_BG;
+        exports2.scanlines[i] |= exports2.CLIP_LEFT;
+        exports2.scanlines[i] |= exports2.EVAL_SP;
       }
       if (i <= 239 || i === 261) {
-        scanlines[i] |= exports2.FETCH_NT;
-        scanlines[i] |= exports2.FETCH_AT;
-        scanlines[i] |= exports2.FETCH_BGL;
-        scanlines[i] |= exports2.FETCH_BGH;
-        scanlines[i] |= exports2.FETCH_SPL;
-        scanlines[i] |= exports2.FETCH_SPH;
-        scanlines[i] |= exports2.COPY_BG;
-        scanlines[i] |= exports2.INC_CX;
-        scanlines[i] |= exports2.INC_FY;
-        scanlines[i] |= exports2.COPY_HS;
+        exports2.scanlines[i] |= exports2.FETCH_NT;
+        exports2.scanlines[i] |= exports2.FETCH_AT;
+        exports2.scanlines[i] |= exports2.FETCH_BGL;
+        exports2.scanlines[i] |= exports2.FETCH_BGH;
+        exports2.scanlines[i] |= exports2.FETCH_SPL;
+        exports2.scanlines[i] |= exports2.FETCH_SPH;
+        exports2.scanlines[i] |= exports2.COPY_BG;
+        exports2.scanlines[i] |= exports2.INC_CX;
+        exports2.scanlines[i] |= exports2.INC_FY;
+        exports2.scanlines[i] |= exports2.COPY_HS;
       }
       if (i <= 7 || i >= 232 && i <= 239) {
-        scanlines[i] |= exports2.CLIP_TB;
+        exports2.scanlines[i] |= exports2.CLIP_TB;
       }
     }
     var i;
-    scanlines[241] |= exports2.VB_START;
-    scanlines[241] |= exports2.VB_START2;
-    scanlines[261] |= exports2.COPY_VS;
-    scanlines[261] |= exports2.VB_END;
-    scanlines[261] |= exports2.SKIP;
-    var cycles = new Uint32Array(341);
-    for (i = 0; i < cycles.length; i++) {
+    exports2.scanlines[241] |= exports2.VB_START;
+    exports2.scanlines[241] |= exports2.VB_START2;
+    exports2.scanlines[261] |= exports2.COPY_VS;
+    exports2.scanlines[261] |= exports2.VB_END;
+    exports2.scanlines[261] |= exports2.SKIP;
+    exports2.cycles = new Uint32Array(341);
+    for (i = 0; i < exports2.cycles.length; i++) {
       if (i >= 1 && i <= 256) {
-        cycles[i] |= exports2.RENDER;
-        cycles[i] |= exports2.CLIP_TB;
+        exports2.cycles[i] |= exports2.RENDER;
+        exports2.cycles[i] |= exports2.CLIP_TB;
       }
       if ((i & 7) === 1 || i === 339) {
-        cycles[i] |= exports2.FETCH_NT;
+        exports2.cycles[i] |= exports2.FETCH_NT;
       }
       if ((i & 7) === 3 && i !== 339) {
-        cycles[i] |= exports2.FETCH_AT;
+        exports2.cycles[i] |= exports2.FETCH_AT;
       }
       if ((i & 7) === 5) {
-        cycles[i] |= i <= 256 || i >= 321 ? exports2.FETCH_BGL : exports2.FETCH_SPL;
+        exports2.cycles[i] |= i <= 256 || i >= 321 ? exports2.FETCH_BGL : exports2.FETCH_SPL;
       }
       if ((i & 7) === 7) {
-        cycles[i] |= i <= 256 || i >= 321 ? exports2.FETCH_BGH : exports2.FETCH_SPH;
+        exports2.cycles[i] |= i <= 256 || i >= 321 ? exports2.FETCH_BGH : exports2.FETCH_SPH;
       }
       if ((i & 7) === 0 && i >= 8 && i <= 256 || i === 328 || i === 336) {
-        cycles[i] |= exports2.INC_CX;
+        exports2.cycles[i] |= exports2.INC_CX;
       }
       if ((i & 7) === 1 && i >= 9 && i <= 257 || i === 329 || i === 337) {
-        cycles[i] |= exports2.COPY_BG;
+        exports2.cycles[i] |= exports2.COPY_BG;
       }
       if (i >= 1 && i <= 256 || i >= 321 && i <= 336) {
-        cycles[i] |= exports2.SHIFT_BG;
+        exports2.cycles[i] |= exports2.SHIFT_BG;
       }
       if (i >= 280 && i <= 304) {
-        cycles[i] |= exports2.COPY_VS;
+        exports2.cycles[i] |= exports2.COPY_VS;
       }
       if (i >= 1 && i <= 8) {
-        cycles[i] |= exports2.CLIP_LEFT;
+        exports2.cycles[i] |= exports2.CLIP_LEFT;
       }
       if (i >= 1 && i <= 3) {
-        cycles[i] |= exports2.VB_START2;
+        exports2.cycles[i] |= exports2.VB_START2;
       }
     }
     var i;
-    cycles[1] |= exports2.VB_START;
-    cycles[1] |= exports2.VB_END;
-    cycles[65] |= exports2.EVAL_SP;
-    cycles[256] |= exports2.INC_FY;
-    cycles[257] |= exports2.COPY_HS;
-    cycles[338] |= exports2.SKIP;
+    exports2.cycles[1] |= exports2.VB_START;
+    exports2.cycles[1] |= exports2.VB_END;
+    exports2.cycles[65] |= exports2.EVAL_SP;
+    exports2.cycles[256] |= exports2.INC_FY;
+    exports2.cycles[257] |= exports2.COPY_HS;
+    exports2.cycles[338] |= exports2.SKIP;
     function compute(scanline, cycle) {
-      return scanlines[scanline] & cycles[cycle];
+      return exports2.scanlines[scanline] & exports2.cycles[cycle];
     }
   }
 });
@@ -2459,13 +2464,23 @@ var require_PPU = __commonJS({
             if (!this.nmiEnabled) {
               this.nmiDelay = 0;
             } else if (!--this.nmiDelay && !this.nmiSuppressed) {
-              this.cpu.activateInterrupt(interrupts_1.NMI);
+              this.cpu.activeInterrupts |= interrupts_1.NMI;
             }
           }
           if (this.cycleFlags & Flag.VB_START) {
-            this.enterVBlank();
+            if (!this.vblankSuppressed) {
+              this.vblankFlag = 1;
+            }
+            this.vblankActive = true;
+            this.frameAvailable = true;
+            this.nmiDelay = 2;
           } else if (this.cycleFlags & Flag.VB_END) {
-            this.leaveVBlank();
+            this.vblankActive = false;
+            this.vblankFlag = 0;
+            this.vblankSuppressed = false;
+            this.nmiSuppressed = false;
+            this.spriteZeroHit = 0;
+            this.spriteOverflow = 0;
           }
         };
         PPU2.prototype.enterVBlank = function() {
@@ -2485,14 +2500,28 @@ var require_PPU = __commonJS({
           this.spriteOverflow = 0;
         };
         PPU2.prototype.incrementCycle = function() {
-          if (this.cycleFlags & Flag.SKIP && this.oddFrame && this.isRenderingEnabled()) {
+          if (this.cycleFlags & Flag.SKIP && this.oddFrame && (this.spritesVisible || this.backgroundVisible)) {
             this.cycle++;
           }
           this.cycle++;
           if (this.cycle > 340) {
-            this.incrementScanline();
+            this.cycle = 0;
+            this.scanline++;
+            if (this.scanline > 261) {
+              this.scanline = 0;
+              this.oddFrame = !this.oddFrame;
+              this.framePosition = 0;
+            }
+            if (this.isRenderingEnabled()) {
+              if (this.scanline <= 239) {
+                this.clearSprites();
+                if (this.scanline > 0) {
+                  this.preRenderSprites();
+                }
+              }
+            }
           }
-          this.cycleFlags = Flag.compute(this.scanline, this.cycle);
+          this.cycleFlags = Flag.scanlines[this.scanline] & Flag.cycles[this.cycle];
         };
         PPU2.prototype.incrementScanline = function() {
           this.cycle = 0;
@@ -2520,7 +2549,28 @@ var require_PPU = __commonJS({
             this.doRendering();
             this.updateScrolling();
           }
-          this.updateVBlank();
+          if (this.nmiDelay) {
+            if (!this.nmiEnabled) {
+              this.nmiDelay = 0;
+            } else if (!--this.nmiDelay && !this.nmiSuppressed) {
+              this.cpu.activeInterrupts |= interrupts_1.NMI;
+            }
+          }
+          if (this.cycleFlags & Flag.VB_START) {
+            if (!this.vblankSuppressed) {
+              this.vblankFlag = 1;
+            }
+            this.vblankActive = true;
+            this.frameAvailable = true;
+            this.nmiDelay = 2;
+          } else if (this.cycleFlags & Flag.VB_END) {
+            this.vblankActive = false;
+            this.vblankFlag = 0;
+            this.vblankSuppressed = false;
+            this.nmiSuppressed = false;
+            this.spriteZeroHit = 0;
+            this.spriteOverflow = 0;
+          }
           this.incrementCycle();
         };
         PPU2.prototype.fetchData = function() {
@@ -2558,7 +2608,7 @@ var require_PPU = __commonJS({
           }
         };
         PPU2.prototype.isRenderingActive = function() {
-          return !this.vblankActive && this.isRenderingEnabled();
+          return !this.vblankActive && (this.spritesVisible || this.backgroundVisible);
         };
         PPU2.prototype.isRenderingEnabled = function() {
           return this.spritesVisible || this.backgroundVisible;
@@ -2840,7 +2890,6 @@ var require_CPU = __commonJS({
   "dist/cfxnes-core/proc/CPU.js": function(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.operations = void 0;
     var common_1 = require_common();
     var interrupts_1 = require_interrupts();
     var F_EXTRA_CYCLE = 1 << 0;
@@ -2848,7 +2897,6 @@ var require_CPU = __commonJS({
     var RESET_ADDRESS = 65532;
     var NMI_ADDRESS = 65530;
     var IRQ_ADDRESS = 65534;
-    exports2.operations = new Array(255);
     var CPU = (
       /** @class */
       function() {
@@ -2968,14 +3016,1525 @@ var require_CPU = __commonJS({
         };
         CPU2.prototype.readAndExecuteOperation = function() {
           var nextProgramByte = this.readNextProgramByte();
-          if (exports2.operations[nextProgramByte]) {
-            this.irqDisabled = this.interruptFlag;
-            this.operationFlags = exports2.operations[nextProgramByte][2];
-            var effectiveAddress = exports2.operations[nextProgramByte][1].call(this);
-            exports2.operations[nextProgramByte][0].call(this, effectiveAddress);
-          } else {
-            common_1.log.warn("CPU halted!");
-            this.halted = true;
+          this.irqDisabled = this.interruptFlag;
+          var effectiveAddress;
+          switch (nextProgramByte) {
+            case 26:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            case 58:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 90:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 122:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 218:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 234:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 250:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 128:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.immediateMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 130:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.immediateMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 137:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.immediateMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 194:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.immediateMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 226:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.immediateMode();
+              this.NOP();
+              break;
+            // 2 cycles
+            case 4:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageMode();
+              this.NOP();
+              break;
+            // 3 cycles
+            case 68:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageMode();
+              this.NOP();
+              break;
+            // 3 cycles
+            case 100:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageMode();
+              this.NOP();
+              break;
+            // 3 cycles
+            case 20:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageXMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 52:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageXMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 84:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageXMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 116:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageXMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 212:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageXMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 244:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.zeroPageXMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 12:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteMode();
+              this.NOP();
+              break;
+            // 4 cycles
+            case 28:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteXMode();
+              this.NOP();
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 60:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteXMode();
+              this.NOP();
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 92:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteXMode();
+              this.NOP();
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 124:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteXMode();
+              this.NOP();
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 220:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteXMode();
+              this.NOP();
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 252:
+              this.operationFlags = F_EXTRA_CYCLE;
+              effectiveAddress = this.absoluteXMode();
+              this.NOP();
+              break;
+            // 4 cycles (+1 if page crossed)
+            //=========================================================
+            // Clear flag instructions
+            //=========================================================
+            case 24:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.CLC();
+              break;
+            // 2 cycles
+            case 88:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.CLI();
+              break;
+            // 2 cycles
+            case 216:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.CLD();
+              break;
+            // 2 cycles
+            case 184:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.CLV();
+              break;
+            // 2 cycles
+            //=========================================================
+            // Set flag instructions
+            //=========================================================
+            case 56:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.SEC();
+              break;
+            // 2 cycles
+            case 120:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.SEI();
+              break;
+            // 2 cycles
+            case 248:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.SED();
+              break;
+            // 2 cycles
+            //=========================================================
+            // Memory write instructions
+            //=========================================================
+            case 133:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.STA(effectiveAddress);
+              break;
+            // 3 cycles
+            case 149:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.STA(effectiveAddress);
+              break;
+            // 4 cycles
+            case 141:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.STA(effectiveAddress);
+              break;
+            // 4 cycles
+            case 157:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.STA(effectiveAddress);
+              break;
+            // 5 cycles
+            case 153:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.STA(effectiveAddress);
+              break;
+            // 5 cycles
+            case 129:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.STA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 145:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.STA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 134:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.STX(effectiveAddress);
+              break;
+            // 3 cycles
+            case 150:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageYMode();
+              this.STX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 142:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.STX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 135:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.SAX(effectiveAddress);
+              break;
+            // 3 cycles
+            case 151:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageYMode();
+              this.SAX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 143:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.SAX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 131:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.SAX(effectiveAddress);
+              break;
+            // 6 cycles
+            case 132:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.STY(effectiveAddress);
+              break;
+            // 3 cycles
+            case 148:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.STY(effectiveAddress);
+              break;
+            // 4 cycles
+            case 140:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.STY(effectiveAddress);
+              break;
+            // 4 cycles
+            case 147:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.SHA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 159:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.SHA(effectiveAddress);
+              break;
+            // 5 cycles
+            case 158:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.SHX(effectiveAddress);
+              break;
+            // 5 cycles
+            case 156:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.SHY(effectiveAddress);
+              break;
+            // 5 cycles
+            //=========================================================
+            // Memory read instructions
+            //=========================================================
+            case 169:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 2 cycles
+            case 165:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 3 cycles
+            case 181:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 4 cycles
+            case 173:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 4 cycles
+            case 189:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 185:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 161:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 177:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.LDA(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 162:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.LDX(effectiveAddress);
+              break;
+            // 2 cycles
+            case 166:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.LDX(effectiveAddress);
+              break;
+            // 3 cycles
+            case 182:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageYMode();
+              this.LDX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 174:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.LDX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 190:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.LDX(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 160:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.LDY(effectiveAddress);
+              break;
+            // 2 cycles
+            case 164:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.LDY(effectiveAddress);
+              break;
+            // 3 cycles
+            case 180:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.LDY(effectiveAddress);
+              break;
+            // 4 cycles
+            case 172:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.LDY(effectiveAddress);
+              break;
+            // 4 cycles
+            case 188:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.LDY(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 171:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 2 cycles
+            case 167:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 3 cycles
+            case 183:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageYMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 175:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 191:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 163:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 6 cycles
+            case 179:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.LAX(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 187:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.LAS(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            //=========================================================
+            // Register transfer instructions
+            //=========================================================
+            case 170:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.TAX();
+              break;
+            // 2 cycles
+            case 168:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.TAY();
+              break;
+            // 2 cycles
+            case 138:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.TXA();
+              break;
+            // 2 cycles
+            case 152:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.TYA();
+              break;
+            // 2 cycles
+            case 154:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.TXS();
+              break;
+            // 2 cycles
+            case 186:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.TSX();
+              break;
+            // 2 cycles
+            //=========================================================
+            // Stack push instructions
+            //=========================================================
+            case 72:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.PHA();
+              break;
+            // 3 cycles
+            case 8:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.PHP();
+              break;
+            // 3 cycles
+            //=========================================================
+            // Stack pull instructions
+            //=========================================================
+            case 104:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.PLA();
+              break;
+            // 4 cycles
+            case 40:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.PLP();
+              break;
+            // 4 cycles
+            //=========================================================
+            // Accumulator bitwise instructions
+            //=========================================================
+            case 41:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.AND(effectiveAddress);
+              break;
+            // 2 cycles
+            case 37:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.AND(effectiveAddress);
+              break;
+            // 3 cycles
+            case 53:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.AND(effectiveAddress);
+              break;
+            // 4 cycles
+            case 45:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.AND(effectiveAddress);
+              break;
+            // 4 cycles
+            case 61:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.AND(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 57:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.AND(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 33:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.AND(effectiveAddress);
+              break;
+            // 6 cycles
+            case 49:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.AND(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 9:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 2 cycles
+            case 5:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 3 cycles
+            case 21:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 4 cycles
+            case 13:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 4 cycles
+            case 29:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 25:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 1:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 17:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.ORA(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 73:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 2 cycles
+            case 69:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 3 cycles
+            case 85:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 4 cycles
+            case 77:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 4 cycles
+            case 93:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 89:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 65:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 6 cycles
+            case 81:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.EOR(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 36:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.BIT(effectiveAddress);
+              break;
+            // 3 cycles
+            case 44:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.BIT(effectiveAddress);
+              break;
+            // 4 cycles
+            //=========================================================
+            // Increment instructions
+            //=========================================================
+            case 230:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.INC(effectiveAddress);
+              break;
+            // 5 cycles
+            case 246:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.INC(effectiveAddress);
+              break;
+            // 6 cycles
+            case 238:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.INC(effectiveAddress);
+              break;
+            // 6 cycles
+            case 254:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.INC(effectiveAddress);
+              break;
+            // 7 cycles
+            case 232:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.INX();
+              break;
+            // 2 cycles
+            case 200:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.INY();
+              break;
+            // 2 cycles
+            //=========================================================
+            // Decrement instructions
+            //=========================================================
+            case 198:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.DEC(effectiveAddress);
+              break;
+            // 5 cycles
+            case 214:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.DEC(effectiveAddress);
+              break;
+            // 6 cycles
+            case 206:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.DEC(effectiveAddress);
+              break;
+            // 6 cycles
+            case 222:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.DEC(effectiveAddress);
+              break;
+            // 7 cycles
+            case 202:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.DEX();
+              break;
+            // 2 cycles
+            case 136:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.DEY();
+              break;
+            // 2 cycles
+            //=========================================================
+            // Comparison instructions
+            //=========================================================
+            case 201:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 2 cycles
+            case 197:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 3 cycles
+            case 213:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 4 cycles
+            case 205:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 4 cycles
+            case 221:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 217:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 193:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 6 cycles
+            case 209:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.CMP(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 224:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.CPX(effectiveAddress);
+              break;
+            // 2 cycles
+            case 228:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.CPX(effectiveAddress);
+              break;
+            // 3 cycles
+            case 236:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.CPX(effectiveAddress);
+              break;
+            // 4 cycles
+            case 192:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.CPY(effectiveAddress);
+              break;
+            // 2 cycles
+            case 196:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.CPY(effectiveAddress);
+              break;
+            // 3 cycles
+            case 204:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.CPY(effectiveAddress);
+              break;
+            // 4 cycles
+            //=========================================================
+            // Branching instructions
+            //=========================================================
+            case 144:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BCC(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 176:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BCS(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 208:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BNE(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 240:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BEQ(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 80:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BVC(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 112:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BVS(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 16:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BPL(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            case 48:
+              this.operationFlags = 0;
+              effectiveAddress = this.relativeMode();
+              this.BMI(effectiveAddress);
+              break;
+            // 2 cycles (+1 if branch succeeds +2 if to a new page)
+            //=========================================================
+            // Jump / subroutine instructions
+            //=========================================================
+            case 76:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.JMP(effectiveAddress);
+              break;
+            // 3 cycles
+            case 108:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectMode();
+              this.JMP(effectiveAddress);
+              break;
+            // 5 cycles
+            case 32:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.JSR(effectiveAddress);
+              break;
+            // 6 cycles
+            case 96:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.RTS();
+              break;
+            // 6 cycles
+            //=========================================================
+            // Interrupt control instructions
+            //=========================================================
+            case 0:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.BRK();
+              break;
+            // 7 cycles
+            case 64:
+              this.operationFlags = 0;
+              this.impliedMode();
+              this.RTI();
+              break;
+            // 6 cycles
+            //=========================================================
+            // Addition / subtraction instructions
+            //=========================================================
+            case 105:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 2 cycles
+            case 101:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 3 cycles
+            case 117:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 4 cycles
+            case 109:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 4 cycles
+            case 125:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 121:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 97:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 6 cycles
+            case 113:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.ADC(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            case 233:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 2 cycles
+            case 235:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 2 cycles
+            case 229:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 3 cycles
+            case 245:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 4 cycles
+            case 237:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 4 cycles
+            case 253:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteXMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 249:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteYMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 4 cycles (+1 if page crossed)
+            case 225:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 6 cycles
+            case 241:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectYMode();
+              this.SBC(effectiveAddress);
+              break;
+            // 5 cycles (+1 if page crossed)
+            //=========================================================
+            // Shifting / rotation instructions
+            //=========================================================
+            case 10:
+              this.operationFlags = 0;
+              effectiveAddress = this.accumulatorMode();
+              this.ASL(effectiveAddress);
+              break;
+            // 2 cycles
+            case 6:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.ASL(effectiveAddress);
+              break;
+            // 5 cycles
+            case 22:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.ASL(effectiveAddress);
+              break;
+            // 6 cycles
+            case 14:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.ASL(effectiveAddress);
+              break;
+            // 6 cycles
+            case 30:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.ASL(effectiveAddress);
+              break;
+            // 7 cycles
+            case 74:
+              this.operationFlags = 0;
+              effectiveAddress = this.accumulatorMode();
+              this.LSR(effectiveAddress);
+              break;
+            // 2 cycles
+            case 70:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.LSR(effectiveAddress);
+              break;
+            // 5 cycles
+            case 86:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.LSR(effectiveAddress);
+              break;
+            // 6 cycles
+            case 78:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.LSR(effectiveAddress);
+              break;
+            // 6 cycles
+            case 94:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.LSR(effectiveAddress);
+              break;
+            // 7 cycles
+            case 42:
+              this.operationFlags = 0;
+              effectiveAddress = this.accumulatorMode();
+              this.ROL(effectiveAddress);
+              break;
+            // 2 cycles
+            case 38:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.ROL(effectiveAddress);
+              break;
+            // 5 cycles
+            case 54:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.ROL(effectiveAddress);
+              break;
+            // 6 cycles
+            case 46:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.ROL(effectiveAddress);
+              break;
+            // 6 cycles
+            case 62:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.ROL(effectiveAddress);
+              break;
+            // 7 cycles
+            case 106:
+              this.operationFlags = 0;
+              effectiveAddress = this.accumulatorMode();
+              this.ROR(effectiveAddress);
+              break;
+            // 2 cycles
+            case 102:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.ROR(effectiveAddress);
+              break;
+            // 5 cycles
+            case 118:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.ROR(effectiveAddress);
+              break;
+            // 6 cycles
+            case 110:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.ROR(effectiveAddress);
+              break;
+            // 6 cycles
+            case 126:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.ROR(effectiveAddress);
+              break;
+            // 7 cycles
+            //=========================================================
+            // Hybrid instructions
+            //=========================================================
+            case 199:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 5 cycles
+            case 215:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 6 cycles
+            case 207:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 6 cycles
+            case 223:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 7 cycles
+            case 219:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 7 cycles
+            case 195:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 8 cycles
+            case 211:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.DCP(effectiveAddress);
+              break;
+            // 8 cycles
+            case 231:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 5 cycles
+            case 247:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 6 cycles
+            case 239:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 6 cycles
+            case 255:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 7 cycles
+            case 251:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 7 cycles
+            case 227:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 8 cycles
+            case 243:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.ISB(effectiveAddress);
+              break;
+            // 8 cycles
+            case 7:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 5 cycles
+            case 23:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 6 cycles
+            case 15:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 6 cycles
+            case 31:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 7 cycles
+            case 27:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 7 cycles
+            case 3:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 8 cycles
+            case 19:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.SLO(effectiveAddress);
+              break;
+            // 8 cycles
+            case 71:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 5 cycles
+            case 87:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 6 cycles
+            case 79:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 6 cycles
+            case 95:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 7 cycles
+            case 91:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 7 cycles
+            case 67:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 8 cycles
+            case 83:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.SRE(effectiveAddress);
+              break;
+            // 8 cycles
+            case 39:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 5 cycles
+            case 55:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 47:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 63:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 7 cycles
+            case 59:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 7 cycles
+            case 35:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 8 cycles
+            case 51:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.RLA(effectiveAddress);
+              break;
+            // 8 cycles
+            case 139:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.XAA(effectiveAddress);
+              break;
+            // 2 cycles
+            case 103:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 5 cycles
+            case 119:
+              this.operationFlags = 0;
+              effectiveAddress = this.zeroPageXMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 111:
+              this.operationFlags = 0;
+              effectiveAddress = this.absoluteMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 6 cycles
+            case 127:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteXMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 7 cycles
+            case 123:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 7 cycles
+            case 99:
+              this.operationFlags = 0;
+              effectiveAddress = this.indirectXMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 8 cycles
+            case 115:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.indirectYMode();
+              this.RRA(effectiveAddress);
+              break;
+            // 8 cycles
+            case 203:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.AXS(effectiveAddress);
+              break;
+            // 2 cycles
+            case 11:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.ANC(effectiveAddress);
+              break;
+            // 2 cycles
+            case 43:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.ANC(effectiveAddress);
+              break;
+            // 2 cycles
+            case 75:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.ALR(effectiveAddress);
+              break;
+            // 2 cycles
+            case 107:
+              this.operationFlags = 0;
+              effectiveAddress = this.immediateMode();
+              this.ARR(effectiveAddress);
+              break;
+            // 2 cycles
+            case 155:
+              this.operationFlags = F_DOUBLE_READ;
+              effectiveAddress = this.absoluteYMode();
+              this.TAS(effectiveAddress);
+              break;
+            // 5 cycles
+            default:
+              break;
           }
         };
         CPU2.prototype.beforeOperation = function(operation) {
@@ -3376,19 +4935,23 @@ var require_CPU = __commonJS({
           this.SHA(address);
         };
         CPU2.prototype.storeValueIntoAccumulator = function(value) {
-          this.updateZeroAndNegativeFlag(value);
+          this.zeroFlag = !(value & 255) | 0;
+          this.negativeFlag = value >>> 7 & 1;
           return this.accumulator = value;
         };
         CPU2.prototype.storeValueIntoRegisterX = function(value) {
-          this.updateZeroAndNegativeFlag(value);
+          this.zeroFlag = !(value & 255) | 0;
+          this.negativeFlag = value >>> 7 & 1;
           this.registerX = value;
         };
         CPU2.prototype.storeValueIntoRegisterY = function(value) {
-          this.updateZeroAndNegativeFlag(value);
+          this.zeroFlag = !(value & 255) | 0;
+          this.negativeFlag = value >>> 7 & 1;
           this.registerY = value;
         };
         CPU2.prototype.storeValueIntoMemory = function(address, value) {
-          this.updateZeroAndNegativeFlag(value);
+          this.zeroFlag = !(value & 255) | 0;
+          this.negativeFlag = value >>> 7 & 1;
           return this.writeByte(address, value);
         };
         CPU2.prototype.storeHighAddressIntoMemory = function(address, register) {
@@ -3410,7 +4973,8 @@ var require_CPU = __commonJS({
         CPU2.prototype.compareRegisterAndOperand = function(register, operand) {
           var result = register - operand;
           this.carryFlag = result >= 0 | 0;
-          this.updateZeroAndNegativeFlag(result);
+          this.zeroFlag = !(result & 255) | 0;
+          this.negativeFlag = result >>> 7 & 1;
           return result & 255;
         };
         CPU2.prototype.branchIf = function(condition, address) {
@@ -3451,251 +5015,6 @@ var require_CPU = __commonJS({
     function isDifferentPage(address1, address2) {
       return (address1 & 65280) !== (address2 & 65280);
     }
-    var proto = CPU.prototype;
-    exports2.operations[26] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[58] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[90] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[122] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[218] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[234] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[250] = [proto.NOP, proto.impliedMode, 0];
-    exports2.operations[128] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    exports2.operations[130] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    exports2.operations[137] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    exports2.operations[194] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    exports2.operations[226] = [proto.NOP, proto.immediateMode, F_EXTRA_CYCLE];
-    exports2.operations[4] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
-    exports2.operations[68] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
-    exports2.operations[100] = [proto.NOP, proto.zeroPageMode, F_EXTRA_CYCLE];
-    exports2.operations[20] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    exports2.operations[52] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    exports2.operations[84] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    exports2.operations[116] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    exports2.operations[212] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    exports2.operations[244] = [proto.NOP, proto.zeroPageXMode, F_EXTRA_CYCLE];
-    exports2.operations[12] = [proto.NOP, proto.absoluteMode, F_EXTRA_CYCLE];
-    exports2.operations[28] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    exports2.operations[60] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    exports2.operations[92] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    exports2.operations[124] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    exports2.operations[220] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    exports2.operations[252] = [proto.NOP, proto.absoluteXMode, F_EXTRA_CYCLE];
-    exports2.operations[24] = [proto.CLC, proto.impliedMode, 0];
-    exports2.operations[88] = [proto.CLI, proto.impliedMode, 0];
-    exports2.operations[216] = [proto.CLD, proto.impliedMode, 0];
-    exports2.operations[184] = [proto.CLV, proto.impliedMode, 0];
-    exports2.operations[56] = [proto.SEC, proto.impliedMode, 0];
-    exports2.operations[120] = [proto.SEI, proto.impliedMode, 0];
-    exports2.operations[248] = [proto.SED, proto.impliedMode, 0];
-    exports2.operations[133] = [proto.STA, proto.zeroPageMode, 0];
-    exports2.operations[149] = [proto.STA, proto.zeroPageXMode, 0];
-    exports2.operations[141] = [proto.STA, proto.absoluteMode, 0];
-    exports2.operations[157] = [proto.STA, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[153] = [proto.STA, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[129] = [proto.STA, proto.indirectXMode, 0];
-    exports2.operations[145] = [proto.STA, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[134] = [proto.STX, proto.zeroPageMode, 0];
-    exports2.operations[150] = [proto.STX, proto.zeroPageYMode, 0];
-    exports2.operations[142] = [proto.STX, proto.absoluteMode, 0];
-    exports2.operations[135] = [proto.SAX, proto.zeroPageMode, 0];
-    exports2.operations[151] = [proto.SAX, proto.zeroPageYMode, 0];
-    exports2.operations[143] = [proto.SAX, proto.absoluteMode, 0];
-    exports2.operations[131] = [proto.SAX, proto.indirectXMode, 0];
-    exports2.operations[132] = [proto.STY, proto.zeroPageMode, 0];
-    exports2.operations[148] = [proto.STY, proto.zeroPageXMode, 0];
-    exports2.operations[140] = [proto.STY, proto.absoluteMode, 0];
-    exports2.operations[147] = [proto.SHA, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[159] = [proto.SHA, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[158] = [proto.SHX, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[156] = [proto.SHY, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[169] = [proto.LDA, proto.immediateMode, 0];
-    exports2.operations[165] = [proto.LDA, proto.zeroPageMode, 0];
-    exports2.operations[181] = [proto.LDA, proto.zeroPageXMode, 0];
-    exports2.operations[173] = [proto.LDA, proto.absoluteMode, 0];
-    exports2.operations[189] = [proto.LDA, proto.absoluteXMode, 0];
-    exports2.operations[185] = [proto.LDA, proto.absoluteYMode, 0];
-    exports2.operations[161] = [proto.LDA, proto.indirectXMode, 0];
-    exports2.operations[177] = [proto.LDA, proto.indirectYMode, 0];
-    exports2.operations[162] = [proto.LDX, proto.immediateMode, 0];
-    exports2.operations[166] = [proto.LDX, proto.zeroPageMode, 0];
-    exports2.operations[182] = [proto.LDX, proto.zeroPageYMode, 0];
-    exports2.operations[174] = [proto.LDX, proto.absoluteMode, 0];
-    exports2.operations[190] = [proto.LDX, proto.absoluteYMode, 0];
-    exports2.operations[160] = [proto.LDY, proto.immediateMode, 0];
-    exports2.operations[164] = [proto.LDY, proto.zeroPageMode, 0];
-    exports2.operations[180] = [proto.LDY, proto.zeroPageXMode, 0];
-    exports2.operations[172] = [proto.LDY, proto.absoluteMode, 0];
-    exports2.operations[188] = [proto.LDY, proto.absoluteXMode, 0];
-    exports2.operations[171] = [proto.LAX, proto.immediateMode, 0];
-    exports2.operations[167] = [proto.LAX, proto.zeroPageMode, 0];
-    exports2.operations[183] = [proto.LAX, proto.zeroPageYMode, 0];
-    exports2.operations[175] = [proto.LAX, proto.absoluteMode, 0];
-    exports2.operations[191] = [proto.LAX, proto.absoluteYMode, 0];
-    exports2.operations[163] = [proto.LAX, proto.indirectXMode, 0];
-    exports2.operations[179] = [proto.LAX, proto.indirectYMode, 0];
-    exports2.operations[187] = [proto.LAS, proto.absoluteYMode, 0];
-    exports2.operations[170] = [proto.TAX, proto.impliedMode, 0];
-    exports2.operations[168] = [proto.TAY, proto.impliedMode, 0];
-    exports2.operations[138] = [proto.TXA, proto.impliedMode, 0];
-    exports2.operations[152] = [proto.TYA, proto.impliedMode, 0];
-    exports2.operations[154] = [proto.TXS, proto.impliedMode, 0];
-    exports2.operations[186] = [proto.TSX, proto.impliedMode, 0];
-    exports2.operations[72] = [proto.PHA, proto.impliedMode, 0];
-    exports2.operations[8] = [proto.PHP, proto.impliedMode, 0];
-    exports2.operations[104] = [proto.PLA, proto.impliedMode, 0];
-    exports2.operations[40] = [proto.PLP, proto.impliedMode, 0];
-    exports2.operations[41] = [proto.AND, proto.immediateMode, 0];
-    exports2.operations[37] = [proto.AND, proto.zeroPageMode, 0];
-    exports2.operations[53] = [proto.AND, proto.zeroPageXMode, 0];
-    exports2.operations[45] = [proto.AND, proto.absoluteMode, 0];
-    exports2.operations[61] = [proto.AND, proto.absoluteXMode, 0];
-    exports2.operations[57] = [proto.AND, proto.absoluteYMode, 0];
-    exports2.operations[33] = [proto.AND, proto.indirectXMode, 0];
-    exports2.operations[49] = [proto.AND, proto.indirectYMode, 0];
-    exports2.operations[9] = [proto.ORA, proto.immediateMode, 0];
-    exports2.operations[5] = [proto.ORA, proto.zeroPageMode, 0];
-    exports2.operations[21] = [proto.ORA, proto.zeroPageXMode, 0];
-    exports2.operations[13] = [proto.ORA, proto.absoluteMode, 0];
-    exports2.operations[29] = [proto.ORA, proto.absoluteXMode, 0];
-    exports2.operations[25] = [proto.ORA, proto.absoluteYMode, 0];
-    exports2.operations[1] = [proto.ORA, proto.indirectXMode, 0];
-    exports2.operations[17] = [proto.ORA, proto.indirectYMode, 0];
-    exports2.operations[73] = [proto.EOR, proto.immediateMode, 0];
-    exports2.operations[69] = [proto.EOR, proto.zeroPageMode, 0];
-    exports2.operations[85] = [proto.EOR, proto.zeroPageXMode, 0];
-    exports2.operations[77] = [proto.EOR, proto.absoluteMode, 0];
-    exports2.operations[93] = [proto.EOR, proto.absoluteXMode, 0];
-    exports2.operations[89] = [proto.EOR, proto.absoluteYMode, 0];
-    exports2.operations[65] = [proto.EOR, proto.indirectXMode, 0];
-    exports2.operations[81] = [proto.EOR, proto.indirectYMode, 0];
-    exports2.operations[36] = [proto.BIT, proto.zeroPageMode, 0];
-    exports2.operations[44] = [proto.BIT, proto.absoluteMode, 0];
-    exports2.operations[230] = [proto.INC, proto.zeroPageMode, 0];
-    exports2.operations[246] = [proto.INC, proto.zeroPageXMode, 0];
-    exports2.operations[238] = [proto.INC, proto.absoluteMode, 0];
-    exports2.operations[254] = [proto.INC, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[232] = [proto.INX, proto.impliedMode, 0];
-    exports2.operations[200] = [proto.INY, proto.impliedMode, 0];
-    exports2.operations[198] = [proto.DEC, proto.zeroPageMode, 0];
-    exports2.operations[214] = [proto.DEC, proto.zeroPageXMode, 0];
-    exports2.operations[206] = [proto.DEC, proto.absoluteMode, 0];
-    exports2.operations[222] = [proto.DEC, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[202] = [proto.DEX, proto.impliedMode, 0];
-    exports2.operations[136] = [proto.DEY, proto.impliedMode, 0];
-    exports2.operations[201] = [proto.CMP, proto.immediateMode, 0];
-    exports2.operations[197] = [proto.CMP, proto.zeroPageMode, 0];
-    exports2.operations[213] = [proto.CMP, proto.zeroPageXMode, 0];
-    exports2.operations[205] = [proto.CMP, proto.absoluteMode, 0];
-    exports2.operations[221] = [proto.CMP, proto.absoluteXMode, 0];
-    exports2.operations[217] = [proto.CMP, proto.absoluteYMode, 0];
-    exports2.operations[193] = [proto.CMP, proto.indirectXMode, 0];
-    exports2.operations[209] = [proto.CMP, proto.indirectYMode, 0];
-    exports2.operations[224] = [proto.CPX, proto.immediateMode, 0];
-    exports2.operations[228] = [proto.CPX, proto.zeroPageMode, 0];
-    exports2.operations[236] = [proto.CPX, proto.absoluteMode, 0];
-    exports2.operations[192] = [proto.CPY, proto.immediateMode, 0];
-    exports2.operations[196] = [proto.CPY, proto.zeroPageMode, 0];
-    exports2.operations[204] = [proto.CPY, proto.absoluteMode, 0];
-    exports2.operations[144] = [proto.BCC, proto.relativeMode, 0];
-    exports2.operations[176] = [proto.BCS, proto.relativeMode, 0];
-    exports2.operations[208] = [proto.BNE, proto.relativeMode, 0];
-    exports2.operations[240] = [proto.BEQ, proto.relativeMode, 0];
-    exports2.operations[80] = [proto.BVC, proto.relativeMode, 0];
-    exports2.operations[112] = [proto.BVS, proto.relativeMode, 0];
-    exports2.operations[16] = [proto.BPL, proto.relativeMode, 0];
-    exports2.operations[48] = [proto.BMI, proto.relativeMode, 0];
-    exports2.operations[76] = [proto.JMP, proto.absoluteMode, 0];
-    exports2.operations[108] = [proto.JMP, proto.indirectMode, 0];
-    exports2.operations[32] = [proto.JSR, proto.absoluteMode, 0];
-    exports2.operations[96] = [proto.RTS, proto.impliedMode, 0];
-    exports2.operations[0] = [proto.BRK, proto.impliedMode, 0];
-    exports2.operations[64] = [proto.RTI, proto.impliedMode, 0];
-    exports2.operations[105] = [proto.ADC, proto.immediateMode, 0];
-    exports2.operations[101] = [proto.ADC, proto.zeroPageMode, 0];
-    exports2.operations[117] = [proto.ADC, proto.zeroPageXMode, 0];
-    exports2.operations[109] = [proto.ADC, proto.absoluteMode, 0];
-    exports2.operations[125] = [proto.ADC, proto.absoluteXMode, 0];
-    exports2.operations[121] = [proto.ADC, proto.absoluteYMode, 0];
-    exports2.operations[97] = [proto.ADC, proto.indirectXMode, 0];
-    exports2.operations[113] = [proto.ADC, proto.indirectYMode, 0];
-    exports2.operations[233] = [proto.SBC, proto.immediateMode, 0];
-    exports2.operations[235] = [proto.SBC, proto.immediateMode, 0];
-    exports2.operations[229] = [proto.SBC, proto.zeroPageMode, 0];
-    exports2.operations[245] = [proto.SBC, proto.zeroPageXMode, 0];
-    exports2.operations[237] = [proto.SBC, proto.absoluteMode, 0];
-    exports2.operations[253] = [proto.SBC, proto.absoluteXMode, 0];
-    exports2.operations[249] = [proto.SBC, proto.absoluteYMode, 0];
-    exports2.operations[225] = [proto.SBC, proto.indirectXMode, 0];
-    exports2.operations[241] = [proto.SBC, proto.indirectYMode, 0];
-    exports2.operations[10] = [proto.ASL, proto.accumulatorMode, 0];
-    exports2.operations[6] = [proto.ASL, proto.zeroPageMode, 0];
-    exports2.operations[22] = [proto.ASL, proto.zeroPageXMode, 0];
-    exports2.operations[14] = [proto.ASL, proto.absoluteMode, 0];
-    exports2.operations[30] = [proto.ASL, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[74] = [proto.LSR, proto.accumulatorMode, 0];
-    exports2.operations[70] = [proto.LSR, proto.zeroPageMode, 0];
-    exports2.operations[86] = [proto.LSR, proto.zeroPageXMode, 0];
-    exports2.operations[78] = [proto.LSR, proto.absoluteMode, 0];
-    exports2.operations[94] = [proto.LSR, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[42] = [proto.ROL, proto.accumulatorMode, 0];
-    exports2.operations[38] = [proto.ROL, proto.zeroPageMode, 0];
-    exports2.operations[54] = [proto.ROL, proto.zeroPageXMode, 0];
-    exports2.operations[46] = [proto.ROL, proto.absoluteMode, 0];
-    exports2.operations[62] = [proto.ROL, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[106] = [proto.ROR, proto.accumulatorMode, 0];
-    exports2.operations[102] = [proto.ROR, proto.zeroPageMode, 0];
-    exports2.operations[118] = [proto.ROR, proto.zeroPageXMode, 0];
-    exports2.operations[110] = [proto.ROR, proto.absoluteMode, 0];
-    exports2.operations[126] = [proto.ROR, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[199] = [proto.DCP, proto.zeroPageMode, 0];
-    exports2.operations[215] = [proto.DCP, proto.zeroPageXMode, 0];
-    exports2.operations[207] = [proto.DCP, proto.absoluteMode, 0];
-    exports2.operations[223] = [proto.DCP, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[219] = [proto.DCP, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[195] = [proto.DCP, proto.indirectXMode, 0];
-    exports2.operations[211] = [proto.DCP, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[231] = [proto.ISB, proto.zeroPageMode, 0];
-    exports2.operations[247] = [proto.ISB, proto.zeroPageXMode, 0];
-    exports2.operations[239] = [proto.ISB, proto.absoluteMode, 0];
-    exports2.operations[255] = [proto.ISB, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[251] = [proto.ISB, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[227] = [proto.ISB, proto.indirectXMode, 0];
-    exports2.operations[243] = [proto.ISB, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[7] = [proto.SLO, proto.zeroPageMode, 0];
-    exports2.operations[23] = [proto.SLO, proto.zeroPageXMode, 0];
-    exports2.operations[15] = [proto.SLO, proto.absoluteMode, 0];
-    exports2.operations[31] = [proto.SLO, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[27] = [proto.SLO, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[3] = [proto.SLO, proto.indirectXMode, 0];
-    exports2.operations[19] = [proto.SLO, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[71] = [proto.SRE, proto.zeroPageMode, 0];
-    exports2.operations[87] = [proto.SRE, proto.zeroPageXMode, 0];
-    exports2.operations[79] = [proto.SRE, proto.absoluteMode, 0];
-    exports2.operations[95] = [proto.SRE, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[91] = [proto.SRE, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[67] = [proto.SRE, proto.indirectXMode, 0];
-    exports2.operations[83] = [proto.SRE, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[39] = [proto.RLA, proto.zeroPageMode, 0];
-    exports2.operations[55] = [proto.RLA, proto.zeroPageXMode, 0];
-    exports2.operations[47] = [proto.RLA, proto.absoluteMode, 0];
-    exports2.operations[63] = [proto.RLA, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[59] = [proto.RLA, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[35] = [proto.RLA, proto.indirectXMode, 0];
-    exports2.operations[51] = [proto.RLA, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[139] = [proto.XAA, proto.immediateMode, 0];
-    exports2.operations[103] = [proto.RRA, proto.zeroPageMode, 0];
-    exports2.operations[119] = [proto.RRA, proto.zeroPageXMode, 0];
-    exports2.operations[111] = [proto.RRA, proto.absoluteMode, 0];
-    exports2.operations[127] = [proto.RRA, proto.absoluteXMode, F_DOUBLE_READ];
-    exports2.operations[123] = [proto.RRA, proto.absoluteYMode, F_DOUBLE_READ];
-    exports2.operations[99] = [proto.RRA, proto.indirectXMode, 0];
-    exports2.operations[115] = [proto.RRA, proto.indirectYMode, F_DOUBLE_READ];
-    exports2.operations[203] = [proto.AXS, proto.immediateMode, 0];
-    exports2.operations[11] = [proto.ANC, proto.immediateMode, 0];
-    exports2.operations[43] = [proto.ANC, proto.immediateMode, 0];
-    exports2.operations[75] = [proto.ALR, proto.immediateMode, 0];
-    exports2.operations[107] = [proto.ARR, proto.immediateMode, 0];
-    exports2.operations[155] = [proto.TAS, proto.absoluteYMode, F_DOUBLE_READ];
   }
 });
 
@@ -4675,7 +5994,6 @@ var require_NES = __commonJS({
     var proc_1 = require_proc();
     var audio_1 = require_audio();
     var interrupts_1 = require_interrupts();
-    var CPU_1 = require_CPU();
     var NES = (
       /** @class */
       function() {
@@ -4785,7 +6103,6 @@ var require_NES = __commonJS({
           this.ppu.resetFrameBuffer();
           var time = now();
           while (!this.ppu.isFrameAvailable()) {
-            this.cpu.step();
             var blocked = this.dma.cycle < 512;
             if (this.cpu.activeInterrupts && !blocked) {
               this.cpu.resolveInterrupt();
@@ -4804,7 +6121,10 @@ var require_NES = __commonJS({
                   if (this.dma.cycle & 1) {
                     var address = this.dma.baseAddress + (this.dma.cycle >> 1);
                     var data = address < 8192 ? this.cpuMemory.ram[address & 2047] : this.cpuMemory.read(address);
-                    this.cpuMemory.write(8196, data);
+                    if (!(!this.ppu.vblankActive && (this.ppu.spritesVisible || this.ppu.backgroundVisible))) {
+                      this.ppu.primaryOAM[this.ppu.oamAddress] = data;
+                    }
+                    this.ppu.oamAddress = this.ppu.oamAddress + 1 & 255;
                   }
                 }
                 this.ppu.tick();
@@ -4818,23 +6138,17 @@ var require_NES = __commonJS({
                 if (this.dma.cycle & 1) {
                   var address = this.dma.baseAddress + (this.dma.cycle >> 1);
                   var data = address < 8192 ? this.cpuMemory.ram[address & 2047] : this.cpuMemory.read(address);
-                  this.cpuMemory.write(8196, data);
+                  if (!(!this.ppu.vblankActive && (this.ppu.spritesVisible || this.ppu.backgroundVisible))) {
+                    this.ppu.primaryOAM[this.ppu.oamAddress] = data;
+                  }
+                  this.ppu.oamAddress = this.ppu.oamAddress + 1 & 255;
                 }
               }
               this.ppu.tick();
               this.ppu.tick();
               this.ppu.tick();
             } else {
-              var nextProgramByte = this.cpu.readNextProgramByte();
-              if (CPU_1.operations[nextProgramByte]) {
-                this.cpu.irqDisabled = this.cpu.interruptFlag;
-                this.cpu.operationFlags = CPU_1.operations[nextProgramByte][2];
-                var effectiveAddress = CPU_1.operations[nextProgramByte][1].call(this.cpu);
-                CPU_1.operations[nextProgramByte][0].call(this.cpu, effectiveAddress);
-              } else {
-                common_1.log.warn("CPU halted!");
-                this.cpu.halted = true;
-              }
+              this.cpu.readAndExecuteOperation();
             }
           }
           console.log("this.ppu.isFrameAvailable time:", now() - time);

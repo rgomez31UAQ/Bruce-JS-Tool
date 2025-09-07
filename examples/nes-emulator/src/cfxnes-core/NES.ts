@@ -8,7 +8,6 @@ import { Cartridge } from './cartridge/create';
 import display from 'display';
 import { Joypad, Zapper } from './devices';
 import { NMI, RESET } from './proc/interrupts';
-import { operations } from './proc/CPU';
 
 export default class NES {
   cpu: CPU;
@@ -175,7 +174,7 @@ export default class NES {
     this.ppu.resetFrameBuffer();
     let time = now();
     while (!this.ppu.isFrameAvailable()) {
-      this.cpu.step();
+      // this.cpu.step();
       const blocked = this.dma.cycle < 512;
       if (this.cpu.activeInterrupts && !blocked) {
         this.cpu.resolveInterrupt();
@@ -195,7 +194,11 @@ export default class NES {
             if (this.dma.cycle & 1) {
               const address = this.dma.baseAddress + (this.dma.cycle >> 1);
               const data = address < 0x2000 ? this.cpuMemory.ram[address & 0x07FF] : this.cpuMemory.read(address);
-              this.cpuMemory.write(0x2004, data);
+              // this.cpuMemory.write(0x2004, data);
+              if (!(!this.ppu.vblankActive && (this.ppu.spritesVisible || this.ppu.backgroundVisible))) {
+                this.ppu.primaryOAM[this.ppu.oamAddress] = data;   // Disabled during rendering
+              }
+              this.ppu.oamAddress = (this.ppu.oamAddress + 1) & 0xFF;
             }
           }
           this.ppu.tick();
@@ -210,29 +213,18 @@ export default class NES {
           if (this.dma.cycle & 1) {
             const address = this.dma.baseAddress + (this.dma.cycle >> 1);
             const data = address < 0x2000 ? this.cpuMemory.ram[address & 0x07FF] : this.cpuMemory.read(address);
-            this.cpuMemory.write(0x2004, data);
+            // this.cpuMemory.write(0x2004, data);
+              if (!(!this.ppu.vblankActive && (this.ppu.spritesVisible || this.ppu.backgroundVisible))) {
+              this.ppu.primaryOAM[this.ppu.oamAddress] = data;   // Disabled during rendering
+            }
+            this.ppu.oamAddress = (this.ppu.oamAddress + 1) & 0xFF;
           }
         }
         this.ppu.tick();
         this.ppu.tick();
         this.ppu.tick();
       } else {
-        // this.cpu.readAndExecuteOperation();
-        const nextProgramByte = this.cpu.readNextProgramByte();
-        if (operations[nextProgramByte]) {
-          // this.cpu.beforeOperation(operation);
-          // this.cpu.executeOperation(operation);
-
-          this.cpu.irqDisabled = this.cpu.interruptFlag;
-          this.cpu.operationFlags = operations[nextProgramByte][2];
-    
-          const effectiveAddress = operations[nextProgramByte][1].call(this.cpu);
-          operations[nextProgramByte][0].call(this.cpu, effectiveAddress);
-    
-        } else {
-          log.warn('CPU halted!');
-          this.cpu.halted = true; // CPU halt (KIL operation code)
-        }
+        this.cpu.readAndExecuteOperation();
       }
     }
     console.log('this.ppu.isFrameAvailable time:', now() - time);

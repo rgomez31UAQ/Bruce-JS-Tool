@@ -29,7 +29,7 @@ export const SKIP = 1 << 20;      // Cycle which is skipped during odd frames
 // Scanline table
 //=========================================================
 
-const scanlines = new Uint32Array(262);
+export const scanlines = new Uint32Array(262);
 
 for (let i = 0; i < scanlines.length; i++) {
   if (i <= 239) {
@@ -65,7 +65,7 @@ scanlines[261] |= SKIP;
 // Cycle table
 //=========================================================
 
-const cycles = new Uint32Array(341);
+export const cycles = new Uint32Array(341);
 
 for (let i = 0; i < cycles.length; i++) {
   if (i >= 1 && i <= 256) {

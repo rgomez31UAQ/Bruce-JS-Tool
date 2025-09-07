@@ -515,13 +515,25 @@ export default class PPU {
       if (!this.nmiEnabled) {
         this.nmiDelay = 0; // NMI disabled near the time VBlank flag is set
       } else if (!--this.nmiDelay && !this.nmiSuppressed) {
-        this.cpu.activateInterrupt(NMI); // Delay decremented to zero
+        this.cpu.activeInterrupts |= NMI; // Delay decremented to zero
       }
     }
     if (this.cycleFlags & Flag.VB_START) {
-      this.enterVBlank();
+      // this.enterVBlank();
+      if (!this.vblankSuppressed) {
+        this.vblankFlag = 1;
+      }
+      this.vblankActive = true;
+      this.frameAvailable = true;
+      this.nmiDelay = 2;
     } else if (this.cycleFlags & Flag.VB_END) {
-      this.leaveVBlank();
+      // this.leaveVBlank();
+      this.vblankActive = false;
+      this.vblankFlag = 0;
+      this.vblankSuppressed = false;
+      this.nmiSuppressed = false;
+      this.spriteZeroHit = 0;
+      this.spriteOverflow = 0;
     }
   }
 
@@ -548,17 +560,36 @@ export default class PPU {
   //=========================================================
 
   incrementCycle() {
-    if ((this.cycleFlags & Flag.SKIP) && this.oddFrame && this.isRenderingEnabled()) {
+    if ((this.cycleFlags & Flag.SKIP) && this.oddFrame && (this.spritesVisible || this.backgroundVisible)) {
       this.cycle++; // One cycle skipped on odd frames
     }
 
     this.cycle++;
 
     if (this.cycle > 340) {
-      this.incrementScanline();
+      // this.incrementScanline();
+      this.cycle = 0;
+      this.scanline++;
+
+      if (this.scanline > 261) {
+        // incrementFrame();
+        this.scanline = 0;
+        this.oddFrame = !this.oddFrame;
+        this.framePosition = 0;
+      }
+
+      if (this.isRenderingEnabled()) {
+        if (this.scanline <= 239) {
+          this.clearSprites();
+
+          if (this.scanline > 0) {
+            this.preRenderSprites(); // Sprites are not rendered on scanline 0
+          }
+        }
+      }
     }
 
-    this.cycleFlags = Flag.compute(this.scanline, this.cycle); // Update flags for the new scanline/cycle
+    this.cycleFlags = Flag.scanlines[this.scanline] & Flag.cycles[this.cycle]; // Update flags for the new scanline/cycle
   }
 
   incrementScanline() {
@@ -597,7 +628,31 @@ export default class PPU {
       this.doRendering();
       this.updateScrolling();
     }
-    this.updateVBlank();
+    // this.updateVBlank();
+    if (this.nmiDelay) {
+      if (!this.nmiEnabled) {
+        this.nmiDelay = 0; // NMI disabled near the time VBlank flag is set
+      } else if (!--this.nmiDelay && !this.nmiSuppressed) {
+        this.cpu.activeInterrupts |= NMI; // Delay decremented to zero
+      }
+    }
+    if (this.cycleFlags & Flag.VB_START) {
+      // this.enterVBlank();
+      if (!this.vblankSuppressed) {
+        this.vblankFlag = 1;
+      }
+      this.vblankActive = true;
+      this.frameAvailable = true;
+      this.nmiDelay = 2;
+    } else if (this.cycleFlags & Flag.VB_END) {
+      // this.leaveVBlank();
+      this.vblankActive = false;
+      this.vblankFlag = 0;
+      this.vblankSuppressed = false;
+      this.nmiSuppressed = false;
+      this.spriteZeroHit = 0;
+      this.spriteOverflow = 0;
+    }
     this.incrementCycle();
   }
 
@@ -639,7 +694,7 @@ export default class PPU {
   }
 
   isRenderingActive() {
-    return !this.vblankActive && this.isRenderingEnabled();
+    return !this.vblankActive && (this.spritesVisible || this.backgroundVisible);
   }
 
   isRenderingEnabled() {

@@ -34,7 +34,13 @@ export default class DMA {
     if (this.cycle < 512) {
       this.cycle++;
       if (this.cycle & 1) {
-        this.transferData(); // Each even cycle
+        const address = this.cpuMemory.dma.baseAddress + (this.cpuMemory.dma.cycle >> 1);
+        const data = address < 0x2000 ? this.cpuMemory.ram[address & 0x07FF] : this.cpuMemory.read(address);
+        // this.cpuMemory.write(0x2004, data);
+          if (!(!this.cpuMemory.ppu.vblankActive && (this.cpuMemory.ppu.spritesVisible || this.cpuMemory.ppu.backgroundVisible))) {
+          this.cpuMemory.ppu.primaryOAM[this.cpuMemory.ppu.oamAddress] = data;   // Disabled during rendering
+        }
+        this.cpuMemory.ppu.oamAddress = (this.cpuMemory.ppu.oamAddress + 1) & 0xFF;
       }
     }
   }
