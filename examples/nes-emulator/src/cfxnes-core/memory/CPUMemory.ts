@@ -1,4 +1,9 @@
+import { APU } from '../audio';
 import {log} from '../common';
+import { Joypad } from '../devices';
+import { PPU } from '../video';
+import DMA from './DMA';
+import Mapper from './mappers/Mapper';
 
 // $10000 +------------------------+-------------------+ $10000
 //        |   Upper PRG ROM bank   |                   |
@@ -25,6 +30,17 @@ import {log} from '../common';
 //  $0000 +------------------------+-------------------+ $0000
 
 export default class CPUMemory {
+  ram: Uint8Array;
+  prgROM: Uint8Array;
+  prgRAM: Uint8Array;
+  prgROMMapping: Uint32Array;
+  prgRAMMapping: number;
+  inputDevice: Joypad;
+  inputStrobe: number;
+  ppu: PPU;
+  apu: APU;
+  dma: DMA;
+  mapper: Mapper;
 
   //=========================================================
   // Initialization
