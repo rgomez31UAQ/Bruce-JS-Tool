@@ -30,8 +30,6 @@ console.log("Globals tests passed!");
 //////  AUDIO MODULE  //////
 var audio_1 = __importDefault(require("audio"));
 audio_1.default.tone(988, 500);
-// @ts-ignore legacy
-tone(440, 500);
 // TODO: Test audio.playFile and playAudioFile
 //////  BADUSB MODULE  //////
 // TODO: Add tests for BADUSB functions
@@ -45,14 +43,6 @@ console.log("Battery Charge:", device_1.default.getBatteryCharge(), "%");
 var memoryStats = device_1.default.getFreeHeapSize();
 console.log("RAM Free:", memoryStats.ram_free);
 console.log("PSRAM Free:", memoryStats.psram_free);
-// @ts-ignore legacy
-console.log("Board:", getBoard());
-// @ts-ignore legacy
-console.log("Battery Charge:", getBattery(), "%");
-// @ts-ignore legacy
-var memoryStatsOld = getFreeHeapSize();
-console.log("RAM Free:", memoryStatsOld.ram_free);
-console.log("PSRAM Free:", memoryStatsOld.psram_free);
 console.log("Device module tests passed!");
 //////  DIALOG MODULE //////
 var dialog_1 = __importDefault(require("dialog"));
@@ -62,10 +52,6 @@ dialog_1.default.info("Info (dialog.info).", true);
 dialog_1.default.success("Success (dialog.success).", true);
 dialog_1.default.warning("Warning (dialog.warning).", true);
 dialog_1.default.error("Error (dialog.error).", true);
-// @ts-ignore legacy
-dialogMessage("Info legacy (dialogMessage).", true);
-// @ts-ignore legacy
-dialogError("Error legacy (dialogError).", true);
 var options = ["Yes", "No", "Cancel"];
 var selected = dialog_1.default.choice(options);
 console.log("selected choice in dialog.choice(array):", selected);
@@ -75,16 +61,8 @@ console.log("selected choice in dialog.choice(nestedArray):", selectedNestedArra
 var optionsObject = { "Go Back": "go_back", "Cancel": "cancel", "Quit": "quit" };
 var selectedObject = dialog_1.default.choice(optionsObject);
 console.log("selected choice in dialog.choice(object):", selectedObject);
-var optionsOld = ["Yes", "yes", "No", "no"]; // Cancel is last option in legacy mode, and cannot be removed
-// @ts-ignore legacy
-var selectedOld = dialogChoice(optionsOld);
-console.log("selected choice in legacy dialogChoice:", selectedOld);
 var filePath = dialog_1.default.pickFile("/", ".txt");
 dialog_1.default.viewFile(filePath);
-// @ts-ignore legacy
-var filePathOld = dialogPickFile("/", "*");
-// @ts-ignore legacy
-dialogViewFile(filePathOld);
 dialog_1.default.viewText("test1line1", "test1");
 dialog_1.default.viewText("test2line1\ntest2line2", "test2");
 dialog_1.default.viewText("test3line1\ntest3line2\n", "test3");
@@ -96,10 +74,6 @@ var display_1 = __importDefault(require("display"));
 // Test screen dimensions
 assert(display_1.default.width() > 0, "Display width should be greater than 0");
 assert(display_1.default.height() > 0, "Display height should be greater than 0");
-// @ts-ignore legacy
-assert(width() === display_1.default.width(), "Display width legacy should be equal to new syntax");
-// @ts-ignore legacy
-assert(height() === display_1.default.height(), "Display height legacy should be equal to new syntax");
 // Test basic drawing
 display_1.default.fill(display_1.default.color(60, 60, 60)); // Clear the screen
 display_1.default.setTextSize(1);
@@ -168,14 +142,8 @@ assert(typeof display_1.default.height() === "number", "display.height() should 
 var ir_1 = __importDefault(require("ir"));
 var irReadValue = ir_1.default.read(10);
 console.log("ir.read:", irReadValue);
-// @ts-ignore legacy
-var irReadLegacy = irRead(10);
-console.log("irReadLegacy:", irReadLegacy);
 var irReadRawValue = ir_1.default.readRaw(10);
 console.log("ir.readRaw:", irReadRawValue);
-// @ts-ignore legacy
-var irReadRawLegacy = irReadRaw(10);
-console.log("irReadRawLegacy:", irReadRawLegacy);
 console.log("ir.transmitFile click any key to continue");
 while (!keyboard_1.default.getAnyPress()) {
     delay(10);
@@ -186,8 +154,6 @@ console.log("irTransmitFile click any key to continue");
 while (!keyboard_1.default.getAnyPress()) {
     delay(10);
 }
-// @ts-ignore legacy
-irTransmitFile("/BruceIR/TV_TCL.ir");
 console.log("irTransmitFile completed");
 //////  INPUT MODULE //////
 //////  MATH MODULE  //////
@@ -198,13 +164,8 @@ notification_1.default.blink(500);
 var serial_1 = __importDefault(require("serial"));
 serial_1.default.print('serial.print ');
 serial_1.default.println('serial.println');
-// @ts-ignore legacy
-serialPrintln('serialPrintln');
 console.log("serial.cmd('tone 500 500');");
 serial_1.default.cmd('tone 500 500');
-console.log("serialCmd('tone 500 500'); // legacy");
-// @ts-ignore legacy
-serialCmd('tone 500 500');
 serial_1.default.println('waiting for user input...');
 var serialReadln = serial_1.default.readln();
 serial_1.default.println('user input: ', serialReadln);
@@ -235,11 +196,6 @@ wifi_1.default.connectDialog();
     console.log("response.body (todo):", response.body);
 }
 {
-    // @ts-ignore legacy
-    var response = wifi_1.default.httpFetch('https://echo.free.beeceptor.com', ['asd', 'dsa']);
-    console.log("httpFetch legacy:", response.body);
-}
-{
     var response = wifi_1.default.httpFetch('https://echo.free.beeceptor.com', {
         method: "POST",
         body: 'asd',
@@ -255,3 +211,5 @@ wifi_1.default.connectDialog();
     });
     console.log("response.body (DELETE):", response.body);
 }
+// @ts-ignore
+gc();

@@ -33,8 +33,6 @@ console.log("Globals tests passed!");
 import audio from "audio";
 
 audio.tone(988, 500);
-// @ts-ignore legacy
-tone(440, 500);
 
 // TODO: Test audio.playFile and playAudioFile
 
@@ -55,16 +53,6 @@ const memoryStats = device.getFreeHeapSize();
 console.log("RAM Free:", memoryStats.ram_free);
 console.log("PSRAM Free:", memoryStats.psram_free);
 
-// @ts-ignore legacy
-console.log("Board:", getBoard());
-// @ts-ignore legacy
-console.log("Battery Charge:", getBattery(), "%");
-
-// @ts-ignore legacy
-const memoryStatsOld = getFreeHeapSize();
-console.log("RAM Free:", memoryStatsOld.ram_free);
-console.log("PSRAM Free:", memoryStatsOld.psram_free);
-
 console.log("Device module tests passed!");
 
 //////  DIALOG MODULE //////
@@ -76,10 +64,6 @@ dialog.info("Info (dialog.info).", true);
 dialog.success("Success (dialog.success).", true);
 dialog.warning("Warning (dialog.warning).", true);
 dialog.error("Error (dialog.error).", true);
-// @ts-ignore legacy
-dialogMessage("Info legacy (dialogMessage).", true);
-// @ts-ignore legacy
-dialogError("Error legacy (dialogError).", true);
 
 const options = ["Yes", "No", "Cancel"];
 const selected = dialog.choice(options);
@@ -93,18 +77,8 @@ const optionsObject = {"Go Back": "go_back", "Cancel": "cancel", "Quit": "quit"}
 const selectedObject = dialog.choice(optionsObject);
 console.log("selected choice in dialog.choice(object):", selectedObject);
 
-const optionsOld = ["Yes", "yes", "No", "no"]; // Cancel is last option in legacy mode, and cannot be removed
-// @ts-ignore legacy
-const selectedOld = dialogChoice(optionsOld);
-console.log("selected choice in legacy dialogChoice:", selectedOld);
-
 const filePath = dialog.pickFile("/", ".txt");
 dialog.viewFile(filePath);
-
-// @ts-ignore legacy
-const filePathOld = dialogPickFile("/", "*");
-// @ts-ignore legacy
-dialogViewFile(filePathOld);
 
 dialog.viewText("test1line1", "test1");
 dialog.viewText("test2line1\ntest2line2", "test2");
@@ -121,10 +95,6 @@ import display from "display";
 // Test screen dimensions
 assert(display.width() > 0, "Display width should be greater than 0");
 assert(display.height() > 0, "Display height should be greater than 0");
-// @ts-ignore legacy
-assert(width() === display.width(), "Display width legacy should be equal to new syntax");
-// @ts-ignore legacy
-assert(height() === display.height(), "Display height legacy should be equal to new syntax");
 
 // Test basic drawing
 display.fill(display.color(60, 60, 60)); // Clear the screen
@@ -297,16 +267,9 @@ import ir from "ir";
 const irReadValue = ir.read(10);
 console.log("ir.read:", irReadValue);
 
-// @ts-ignore legacy
-const irReadLegacy = irRead(10);
-console.log("irReadLegacy:", irReadLegacy);
 
 const irReadRawValue = ir.readRaw(10);
 console.log("ir.readRaw:", irReadRawValue);
-
-// @ts-ignore legacy
-const irReadRawLegacy = irReadRaw(10);
-console.log("irReadRawLegacy:", irReadRawLegacy);
 
 console.log("ir.transmitFile click any key to continue");
 while (!keyboard.getAnyPress()) {
@@ -319,8 +282,6 @@ console.log("irTransmitFile click any key to continue");
 while (!keyboard.getAnyPress()) {
   delay(10);
 }
-// @ts-ignore legacy
-irTransmitFile("/BruceIR/TV_TCL.ir");
 console.log("irTransmitFile completed");
 
 //////  INPUT MODULE //////
@@ -340,14 +301,9 @@ import serial from "serial";
 
 serial.print('serial.print ');
 serial.println('serial.println');
-// @ts-ignore legacy
-serialPrintln('serialPrintln');
 
 console.log("serial.cmd('tone 500 500');");
 serial.cmd('tone 500 500');
-console.log("serialCmd('tone 500 500'); // legacy");
-// @ts-ignore legacy
-serialCmd('tone 500 500');
 
 serial.println('waiting for user input...');
 const serialReadln = serial.readln();
@@ -390,12 +346,6 @@ wifi.connectDialog();
 }
 
 {
-  // @ts-ignore legacy
-  const response = wifi.httpFetch('https://echo.free.beeceptor.com', ['asd', 'dsa']);
-  console.log("httpFetch legacy:", response.body);
-}
-
-{
   const response = wifi.httpFetch('https://echo.free.beeceptor.com', {
     method: "POST",
     body: 'asd',
@@ -412,3 +362,6 @@ wifi.connectDialog();
   });
   console.log("response.body (DELETE):", response.body);
 }
+
+// @ts-ignore
+gc();
